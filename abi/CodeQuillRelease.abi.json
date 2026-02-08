@@ -3,11 +3,6 @@
     "inputs": [
       {
         "internalType": "address",
-        "name": "initialOwner",
-        "type": "address"
-      },
-      {
-        "internalType": "address",
         "name": "registryAddr",
         "type": "address"
       },
@@ -31,30 +26,14 @@
     "type": "constructor"
   },
   {
-    "inputs": [
-      {
-        "internalType": "address",
-        "name": "owner",
-        "type": "address"
-      }
-    ],
-    "name": "OwnableInvalidOwner",
-    "type": "error"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "address",
-        "name": "account",
-        "type": "address"
-      }
-    ],
-    "name": "OwnableUnauthorizedAccount",
-    "type": "error"
-  },
-  {
     "anonymous": false,
     "inputs": [
+      {
+        "indexed": true,
+        "internalType": "bytes32",
+        "name": "contextId",
+        "type": "bytes32"
+      },
       {
         "indexed": true,
         "internalType": "address",
@@ -94,25 +73,6 @@
       }
     ],
     "name": "GouvernanceStatusChanged",
-    "type": "event"
-  },
-  {
-    "anonymous": false,
-    "inputs": [
-      {
-        "indexed": true,
-        "internalType": "address",
-        "name": "previousOwner",
-        "type": "address"
-      },
-      {
-        "indexed": true,
-        "internalType": "address",
-        "name": "newOwner",
-        "type": "address"
-      }
-    ],
-    "name": "OwnershipTransferred",
     "type": "event"
   },
   {
@@ -305,8 +265,14 @@
     "type": "function"
   },
   {
-    "inputs": [],
-    "name": "daoExecutor",
+    "inputs": [
+      {
+        "internalType": "bytes32",
+        "name": "",
+        "type": "bytes32"
+      }
+    ],
+    "name": "daoExecutors",
     "outputs": [
       {
         "internalType": "address",
@@ -533,19 +499,6 @@
   },
   {
     "inputs": [],
-    "name": "owner",
-    "outputs": [
-      {
-        "internalType": "address",
-        "name": "",
-        "type": "address"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [],
     "name": "registry",
     "outputs": [
       {
@@ -674,13 +627,6 @@
     "type": "function"
   },
   {
-    "inputs": [],
-    "name": "renounceOwnership",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
     "inputs": [
       {
         "internalType": "bytes32",
@@ -705,6 +651,16 @@
   },
   {
     "inputs": [
+      {
+        "internalType": "bytes32",
+        "name": "contextId",
+        "type": "bytes32"
+      },
+      {
+        "internalType": "address",
+        "name": "author",
+        "type": "address"
+      },
       {
         "internalType": "address",
         "name": "daoExecutor_",
@@ -753,19 +709,6 @@
       }
     ],
     "name": "supersedeRelease",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "address",
-        "name": "newOwner",
-        "type": "address"
-      }
-    ],
-    "name": "transferOwnership",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"
