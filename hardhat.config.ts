@@ -33,7 +33,7 @@ export default defineConfig({
       type: "http",
       chainType: "l1",
       url: configVariable("SEPOLIA_RPC"),
-      accounts: [configVariable("DEPLOYER_OPHELIOS_PK")],
+      accounts: [configVariable("DEPLOYER_PK")],
     },
   },
 });
