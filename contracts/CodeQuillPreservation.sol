@@ -11,7 +11,7 @@ interface ICodeQuillWorkspaceRegistry {
 }
 
 interface ICodeQuillDelegation {
-    function SCOPE_BACKUP() external view returns (uint256);
+    function SCOPE_PRESERVATION() external view returns (uint256);
 
     function isAuthorized(
         address owner_,
@@ -26,35 +26,35 @@ interface ICodeQuillSnapshotRegistry {
     function snapshotIndexByRoot(bytes32 repoId, bytes32 merkleRoot) external view returns (uint256);
 }
 
-/// @title CodeQuillBackupRegistry
-/// @notice Optional registry for anchoring existence of encrypted backups bound to a published snapshot.
+/// @title CodeQuillPreservationRegistry
+/// @notice Optional registry for anchoring existence of encrypted preservations bound to a published snapshot.
 /// @dev This anchors metadata only (hashes + optional CID). It does NOT store plaintext and does NOT prove build causality.
-contract CodeQuillBackupRegistry {
+contract CodeQuillPreservationRegistry {
     ICodeQuillRepositoryRegistry public immutable registry;
     ICodeQuillWorkspaceRegistry public immutable workspace;
     ICodeQuillDelegation public immutable delegation;
     ICodeQuillSnapshotRegistry public immutable snapshot;
 
-    struct Backup {
+    struct Preservation {
         bytes32 snapshotMerkleRoot; // snapshot merkle root (must exist in CodeQuillSnapshotRegistry)
         bytes32 archiveSha256;      // sha256 of plaintext archive bytes (tar.gz) BEFORE encryption
-        bytes32 metadataSha256;     // optional: sha256 of backup_metadata JSON (0x0 if unused)
-        string  backupCid;          // optional: encrypted blob CID / locator (can be empty)
+        bytes32 metadataSha256;     // optional: sha256 of preservation_metadata JSON (0x0 if unused)
+        string  preservationCid;    // optional: encrypted blob CID / locator (can be empty)
         uint256 timestamp;          // block.timestamp
         address author;             // repo owner (recorded for provenance)
     }
 
-    // repoId => snapshotRoot => single backup (overwrite allowed)
-    mapping(bytes32 => mapping(bytes32 => Backup)) private backupsOf;
+    // repoId => snapshotRoot => single preservation (overwrite allowed)
+    mapping(bytes32 => mapping(bytes32 => Preservation)) private preservationsOf;
 
-    event BackupAnchored(
+    event PreservationAnchored(
         bytes32 indexed repoId,
         bytes32 indexed snapshotMerkleRoot,
         bytes32 indexed archiveSha256,
         bytes32 contextId,
         address author,
         bytes32 metadataSha256,
-        string backupCid,
+        string preservationCid,
         uint256 timestamp
     );
 
@@ -75,22 +75,22 @@ contract CodeQuillBackupRegistry {
         snapshot = ICodeQuillSnapshotRegistry(snapshotAddr);
     }
 
-    /// @notice Anchor a backup record for a snapshot root.
+    /// @notice Anchor a preservation record for a snapshot root.
     /// @dev Works for:
     ///  - direct repo owner call (msg.sender == repoOwner), and
-    ///  - relayed call where repo owner delegated SCOPE_BACKUP to msg.sender within contextId.
+    ///  - relayed call where repo owner delegated SCOPE_PRESERVATION to msg.sender within contextId.
     ///
     /// Principles enforced:
     /// - repo must belong to contextId
     /// - repo owner must be a member of contextId
     /// - author must be repo owner (provenance)
-    function anchorBackup(
+    function anchorPreservation(
         bytes32 repoId,
         bytes32 contextId,
         bytes32 snapshotMerkleRoot,
         bytes32 archiveSha256,
         bytes32 metadataSha256,
-        string calldata backupCid,
+        string calldata preservationCid,
         address author
     ) external {
         require(contextId != bytes32(0), "zero context");
@@ -110,7 +110,7 @@ contract CodeQuillBackupRegistry {
 
         // Authorization: owner calls directly OR owner delegated caller for this context
         if (msg.sender != owner_) {
-            bool isDelegated = delegation.isAuthorized(owner_, msg.sender, delegation.SCOPE_BACKUP(), contextId);
+            bool isDelegated = delegation.isAuthorized(owner_, msg.sender, delegation.SCOPE_PRESERVATION(), contextId);
             require(isDelegated, "not authorized");
         }
 
@@ -118,46 +118,46 @@ contract CodeQuillBackupRegistry {
         uint256 snapIdx1 = snapshot.snapshotIndexByRoot(repoId, snapshotMerkleRoot);
         require(snapIdx1 != 0, "snapshot not found");
 
-        backupsOf[repoId][snapshotMerkleRoot] = Backup({
+        preservationsOf[repoId][snapshotMerkleRoot] = Preservation({
             snapshotMerkleRoot: snapshotMerkleRoot,
             archiveSha256: archiveSha256,
             metadataSha256: metadataSha256,
-            backupCid: backupCid,
+            preservationCid: preservationCid,
             timestamp: block.timestamp,
             author: author
         });
 
-        emit BackupAnchored(
+        emit PreservationAnchored(
             repoId,
             snapshotMerkleRoot,
             archiveSha256,
             contextId,
             author,
             metadataSha256,
-            backupCid,
+            preservationCid,
             block.timestamp
         );
     }
 
-    /// @notice Check if a backup exists for a given repo and snapshot.
-    function hasBackup(bytes32 repoId, bytes32 snapshotMerkleRoot) external view returns (bool) {
-        return backupsOf[repoId][snapshotMerkleRoot].timestamp != 0;
+    /// @notice Check if a preservation exists for a given repo and snapshot.
+    function hasPreservation(bytes32 repoId, bytes32 snapshotMerkleRoot) external view returns (bool) {
+        return preservationsOf[repoId][snapshotMerkleRoot].timestamp != 0;
     }
 
-    /// @notice Get backup metadata for a given repo and snapshot.
-    function getBackup(bytes32 repoId, bytes32 snapshotMerkleRoot)
+    /// @notice Get preservation metadata for a given repo and snapshot.
+    function getPreservation(bytes32 repoId, bytes32 snapshotMerkleRoot)
     external
     view
     returns (
         bytes32 archiveSha256,
         bytes32 metadataSha256,
-        string memory backupCid,
+        string memory preservationCid,
         uint256 timestamp,
         address author
     )
     {
-        Backup storage b = backupsOf[repoId][snapshotMerkleRoot];
-        require(b.timestamp != 0, "backup not found");
-        return (b.archiveSha256, b.metadataSha256, b.backupCid, b.timestamp, b.author);
+        Preservation storage p = preservationsOf[repoId][snapshotMerkleRoot];
+        require(p.timestamp != 0, "preservation not found");
+        return (p.archiveSha256, p.metadataSha256, p.preservationCid, p.timestamp, p.author);
     }
 }

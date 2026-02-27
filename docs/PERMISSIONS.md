@@ -16,7 +16,7 @@ This document outlines the access control policies for each privileged function 
 | **RepositoryRegistry** | `claimRepo` | ❌ | ✅ | ❌ | ❌ | ❌ | ⚠️ [3] | ❌ |
 | | `transferRepo` | ❌ | ❌ | ✅ | ❌ | ❌ | ⚠️ [3] | ❌ |
 | **SnapshotRegistry** | `createSnapshot` | ❌ | ❌ | ✅ | ❌ | ❌ | ⚠️ [4] | ❌ |
-| **BackupRegistry** | `anchorBackup` | ❌ | ❌ | ✅ | ❌ | ❌ | ⚠️ [5] | ❌ |
+| **PreservationRegistry** | `anchorPreservation` | ❌ | ❌ | ✅ | ❌ | ❌ | ⚠️ [5] | ❌ |
 | **ReleaseRegistry** | `anchorRelease` | ❌ | ✅ | ❌ | ❌ | ❌ | ⚠️ [6] | ❌ |
 | | `supersedeRelease` | ❌ | ✅ | ❌ | ❌ | ❌ | ⚠️ [6] | ❌ |
 | | `revokeRelease` | ❌ | ✅ | ❌ | ❌ | ❌ | ⚠️ [6] | ❌ |
@@ -31,7 +31,7 @@ This document outlines the access control policies for each privileged function 
 *   **[2] Self-Leave**: Any workspace member can remove themselves, provided they are not the current authority.
 *   **[3] SCOPE_CLAIM**: Allowed if the `owner_` has delegated `SCOPE_CLAIM` to the `msg.sender` for the given `contextId`.
 *   **[4] SCOPE_SNAPSHOT**: Allowed if the repository owner has delegated `SCOPE_SNAPSHOT` to the `msg.sender` for the given `contextId`.
-*   **[5] SCOPE_BACKUP**: Allowed if the repository owner has delegated `SCOPE_BACKUP` to the `msg.sender` for the given `contextId`.
+*   **[5] SCOPE_PRESERVATION**: Allowed if the repository owner has delegated `SCOPE_PRESERVATION` to the `msg.sender` for the given `contextId`.
 *   **[6] SCOPE_RELEASE**: Allowed if the author has delegated `SCOPE_RELEASE` to the `msg.sender` for the given `contextId`.
 *   **[7] SCOPE_ATTEST**: Allowed if the author has delegated `SCOPE_ATTEST` to the `msg.sender` for the given `contextId`.
 

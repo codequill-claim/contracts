@@ -18,9 +18,9 @@ graph TB
         SR[CodeQuillSnapshotRegistry]
     end
 
-    subgraph "Releases & Backups"
+    subgraph "Releases & Preservations"
         RL[CodeQuillReleaseRegistry]
-        BR[CodeQuillBackupRegistry]
+        PR[CodeQuillPreservationRegistry]
     end
 
     subgraph "Trust & Verification"
@@ -35,10 +35,10 @@ graph TB
     SR -->|calls| DL
     SR -->|calls| RR
     
-    BR -->|calls| WR
-    BR -->|calls| DL
-    BR -->|calls| RR
-    BR -->|calls| SR
+    PR -->|calls| WR
+    PR -->|calls| DL
+    PR -->|calls| RR
+    PR -->|calls| SR
     
     RL -->|calls| WR
     RL -->|calls| DL
@@ -105,9 +105,9 @@ For more information on the internal data structures and logic of each registry,
 *   **Repository & Snapshots**:
     *   [CodeQuillRepositoryRegistry](./CodeQuillRepositoryRegistry.md)
     *   [CodeQuillSnapshotRegistry](./CodeQuillSnapshotRegistry.md)
-*   **Releases & Backups**:
+*   **Releases & Preservations**:
     *   [CodeQuillReleaseRegistry](./CodeQuillReleaseRegistry.md)
-    *   [CodeQuillBackupRegistry](./CodeQuillBackupRegistry.md)
+    *   [CodeQuillPreservationRegistry](./CodeQuillPreservationRegistry.md)
 *   **Trust & Verification**:
     *   [CodeQuillAttestationRegistry](./CodeQuillAttestationRegistry.md)
 

@@ -34,14 +34,14 @@ export async function setupCodeQuill() {
   );
   await snapshot.waitForDeployment();
 
-  const Backup = await ethers.getContractFactory("CodeQuillBackupRegistry");
-  const backup = await Backup.deploy(
+  const Preservation = await ethers.getContractFactory("CodeQuillPreservationRegistry");
+  const preservation = await Preservation.deploy(
     await repository.getAddress(),
     await workspace.getAddress(),
     await delegation.getAddress(),
     await snapshot.getAddress(),
   );
-  await backup.waitForDeployment();
+  await preservation.waitForDeployment();
 
   const Release = await ethers.getContractFactory("CodeQuillReleaseRegistry");
   const release = await Release.deploy(
@@ -72,7 +72,7 @@ export async function setupCodeQuill() {
     delegation,
     repository,
     snapshot,
-    backup,
+    preservation,
     release,
     attestation,
   };

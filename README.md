@@ -11,7 +11,7 @@ CodeQuill is a decentralized registry for repositories, snapshots, and supply-ch
 - **CodeQuillRepositoryRegistry**: Repository claim registry (repoId -> owner) with context-scoped relayer support.
 - **CodeQuillSnapshotRegistry**: Lightweight snapshotting via Merkle roots and off-chain git commit metadata.
 - **CodeQuillReleaseRegistry**: Anchors immutable project releases referencing snapshots with integrated governance.
-- **CodeQuillBackupRegistry**: Optional registry for anchoring encrypted backup archives bound to snapshots.
+- **CodeQuillPreservationRegistry**: Optional registry for anchoring encrypted preservation archives bound to snapshots.
 - **CodeQuillAttestationRegistry**: Records supply-chain attestations (sha256 artifact digests) bound to on-chain releases.
 
 ## Documentation

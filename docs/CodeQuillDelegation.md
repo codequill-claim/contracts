@@ -24,7 +24,7 @@ Permissions are defined as bitmasks, allowing multiple scopes to be combined in 
 | `SCOPE_CLAIM` | `1 << 0` | Ability to claim repository ownership. |
 | `SCOPE_SNAPSHOT` | `1 << 1` | Ability to create source code snapshots. |
 | `SCOPE_ATTEST` | `1 << 2` | Ability to sign and record attestations for releases. |
-| `SCOPE_BACKUP` | `1 << 3` | Ability to anchor backup records. |
+| `SCOPE_PRESERVATION` | `1 << 3` | Ability to anchor preservation records. |
 | `SCOPE_RELEASE` | `1 << 4` | Ability to anchor, revoke, or supersede releases. |
 | `SCOPE_ALL` | `max uint256` | Full authorization for all actions within the context. |
 

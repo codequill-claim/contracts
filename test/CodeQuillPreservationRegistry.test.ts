@@ -9,14 +9,14 @@ import {
   setupCodeQuill,
 } from "./utils";
 
-describe("CodeQuillBackupRegistry", function () {
+describe("CodeQuillPreservationRegistry", function () {
   let ethers: any;
   let time: any;
   let workspace: any;
   let repository: any;
   let delegation: any;
   let snapshotRegistry: any;
-  let backupRegistry: any;
+  let preservationRegistry: any;
   let deployer: any;
   let repoOwner: any;
   let relayer: any;
@@ -25,7 +25,7 @@ describe("CodeQuillBackupRegistry", function () {
   let workspaceDomain: any;
 
   const contextId = "0x1111111111111111111111111111111111111111111111111111111111111111";
-  const repoIdLabel = "backup-repo";
+  const repoIdLabel = "preservation-repo";
 
   beforeEach(async function () {
     const env = await setupCodeQuill();
@@ -36,7 +36,7 @@ describe("CodeQuillBackupRegistry", function () {
     repository = env.repository;
     delegation = env.delegation;
     snapshotRegistry = env.snapshot;
-    backupRegistry = env.backup;
+    preservationRegistry = env.preservation;
     repoOwner = env.alice;
     relayer = env.bob;
     other = env.charlie;
@@ -82,28 +82,28 @@ describe("CodeQuillBackupRegistry", function () {
       );
   });
 
-  describe("anchorBackup", function () {
-    it("allows repo owner to anchor a backup directly", async function () {
+  describe("anchorPreservation", function () {
+    it("allows repo owner to anchor a preservation directly", async function () {
       const repoId = ethers.encodeBytes32String(repoIdLabel);
       const merkleRoot = ethers.id("root");
       const archiveSha256 = ethers.id("archive1");
       const metadataSha256 = ethers.id("metadata1");
-      const backupCid = "QmBackup123";
+      const preservationCid = "QmPreservation123";
 
       await expect(
-        backupRegistry
+        preservationRegistry
           .connect(repoOwner)
-          .anchorBackup(
+          .anchorPreservation(
             repoId,
             contextId,
             merkleRoot,
             archiveSha256,
             metadataSha256,
-            backupCid,
+            preservationCid,
             repoOwner.address,
           ),
       )
-        .to.emit(backupRegistry, "BackupAnchored")
+        .to.emit(preservationRegistry, "PreservationAnchored")
         .withArgs(
           repoId,
           merkleRoot,
@@ -111,24 +111,24 @@ describe("CodeQuillBackupRegistry", function () {
           contextId,
           repoOwner.address,
           metadataSha256,
-          backupCid,
+          preservationCid,
           anyValue,
         );
 
-      expect(await backupRegistry.hasBackup(repoId, merkleRoot)).to.equal(true);
+      expect(await preservationRegistry.hasPreservation(repoId, merkleRoot)).to.equal(true);
     });
 
-    it("allows delegated relayer to anchor a backup", async function () {
+    it("allows delegated relayer to anchor a preservation", async function () {
       const repoId = ethers.encodeBytes32String(repoIdLabel);
       const merkleRoot = ethers.id("root");
       const archiveSha256 = ethers.id("archive-relayed");
       const metadataSha256 = ethers.ZeroHash;
-      const backupCid = "";
+      const preservationCid = "";
 
       const now = asBigInt(await time.latest());
       const expiry = now + 3600n;
       const deadline = now + 7200n;
-      const scopes = await delegation.SCOPE_BACKUP();
+      const scopes = await delegation.SCOPE_PRESERVATION();
       const nonce = await delegation.nonces(repoOwner.address);
       const value = {
         owner: repoOwner.address,
@@ -155,19 +155,19 @@ describe("CodeQuillBackupRegistry", function () {
       );
 
       await expect(
-        backupRegistry
+        preservationRegistry
           .connect(relayer)
-          .anchorBackup(
+          .anchorPreservation(
             repoId,
             contextId,
             merkleRoot,
             archiveSha256,
             metadataSha256,
-            backupCid,
+            preservationCid,
             repoOwner.address,
           ),
       )
-        .to.emit(backupRegistry, "BackupAnchored")
+        .to.emit(preservationRegistry, "PreservationAnchored")
         .withArgs(
           repoId,
           merkleRoot,
@@ -175,7 +175,7 @@ describe("CodeQuillBackupRegistry", function () {
           contextId,
           repoOwner.address,
           metadataSha256,
-          backupCid,
+          preservationCid,
           anyValue,
         );
     });
@@ -184,9 +184,9 @@ describe("CodeQuillBackupRegistry", function () {
       const repoId = ethers.encodeBytes32String(repoIdLabel);
       const fakeRoot = ethers.id("fake");
       await expect(
-        backupRegistry
+        preservationRegistry
           .connect(repoOwner)
-          .anchorBackup(
+          .anchorPreservation(
             repoId,
             contextId,
             fakeRoot,
@@ -198,13 +198,13 @@ describe("CodeQuillBackupRegistry", function () {
       ).to.be.revertedWith("snapshot not found");
     });
 
-    it("allows overwriting backup for the same repo and snapshot", async function () {
+    it("allows overwriting preservation for the same repo and snapshot", async function () {
       const repoId = ethers.encodeBytes32String(repoIdLabel);
       const merkleRoot = ethers.id("root");
 
-      await backupRegistry
+      await preservationRegistry
         .connect(repoOwner)
-        .anchorBackup(
+        .anchorPreservation(
           repoId,
           contextId,
           merkleRoot,
@@ -215,10 +215,10 @@ describe("CodeQuillBackupRegistry", function () {
         );
 
       const newArchiveSha = ethers.id("archive-new");
-      const newCid = "QmNewBackup456";
-      await backupRegistry
+      const newCid = "QmNewPreservation456";
+      await preservationRegistry
         .connect(repoOwner)
-        .anchorBackup(
+        .anchorPreservation(
           repoId,
           contextId,
           merkleRoot,
@@ -228,17 +228,17 @@ describe("CodeQuillBackupRegistry", function () {
           repoOwner.address,
         );
 
-      const b = await backupRegistry.getBackup(repoId, merkleRoot);
-      expect(b.archiveSha256).to.equal(newArchiveSha);
-      expect(b.backupCid).to.equal(newCid);
+      const p = await preservationRegistry.getPreservation(repoId, merkleRoot);
+      expect(p.archiveSha256).to.equal(newArchiveSha);
+      expect(p.preservationCid).to.equal(newCid);
     });
 
     it("reverts if caller is not authorized", async function () {
       const repoId = ethers.encodeBytes32String(repoIdLabel);
       await expect(
-        backupRegistry
+        preservationRegistry
           .connect(other)
-          .anchorBackup(
+          .anchorPreservation(
             repoId,
             contextId,
             ethers.id("root"),
@@ -253,9 +253,9 @@ describe("CodeQuillBackupRegistry", function () {
     it("reverts when repo is not claimed", async function () {
       const unclaimedRepo = ethers.id("unclaimed");
       await expect(
-        backupRegistry
+        preservationRegistry
           .connect(repoOwner)
-          .anchorBackup(
+          .anchorPreservation(
             unclaimedRepo,
             contextId,
             ethers.id("root"),
@@ -269,37 +269,37 @@ describe("CodeQuillBackupRegistry", function () {
   });
 
   describe("views", function () {
-    it("hasBackup / getBackup return expected values and revert when missing", async function () {
+    it("hasPreservation / getPreservation return expected values and revert when missing", async function () {
       const repoId = ethers.encodeBytes32String(repoIdLabel);
       const merkleRoot = ethers.id("root");
       const archiveSha256 = ethers.id("archive-view");
       const metadataSha256 = ethers.id("metadata-view");
-      const backupCid = "cid-view";
+      const preservationCid = "cid-view";
 
-      await backupRegistry
+      await preservationRegistry
         .connect(repoOwner)
-        .anchorBackup(
+        .anchorPreservation(
           repoId,
           contextId,
           merkleRoot,
           archiveSha256,
           metadataSha256,
-          backupCid,
+          preservationCid,
           repoOwner.address,
         );
 
-      expect(await backupRegistry.hasBackup(repoId, merkleRoot)).to.equal(true);
-      expect(await backupRegistry.hasBackup(repoId, ethers.id("other"))).to.equal(false);
+      expect(await preservationRegistry.hasPreservation(repoId, merkleRoot)).to.equal(true);
+      expect(await preservationRegistry.hasPreservation(repoId, ethers.id("other"))).to.equal(false);
 
-      const b = await backupRegistry.getBackup(repoId, merkleRoot);
-      expect(b.archiveSha256).to.equal(archiveSha256);
-      expect(b.metadataSha256).to.equal(metadataSha256);
-      expect(b.backupCid).to.equal(backupCid);
-      expect(b.author).to.equal(repoOwner.address);
-      expect(b.timestamp).to.be.gt(0);
+      const p = await preservationRegistry.getPreservation(repoId, merkleRoot);
+      expect(p.archiveSha256).to.equal(archiveSha256);
+      expect(p.metadataSha256).to.equal(metadataSha256);
+      expect(p.preservationCid).to.equal(preservationCid);
+      expect(p.author).to.equal(repoOwner.address);
+      expect(p.timestamp).to.be.gt(0);
 
-      await expect(backupRegistry.getBackup(repoId, ethers.id("missing"))).to.be.revertedWith(
-        "backup not found",
+      await expect(preservationRegistry.getPreservation(repoId, ethers.id("missing"))).to.be.revertedWith(
+        "preservation not found",
       );
     });
   });

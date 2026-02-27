@@ -5,7 +5,7 @@ The `CodeQuillRepositoryRegistry` is responsible for tracking ownership of softw
 ## Core Concepts
 
 ### Repository Claims
-A repository must be "claimed" before any other actions (like creating snapshots or backups) can be performed. Claiming a repository establishes a verifiable link between the `repoId` (which could be a hash of the project name or a unique UUID) and an owner's wallet.
+A repository must be "claimed" before any other actions (like creating snapshots or preservations) can be performed. Claiming a repository establishes a verifiable link between the `repoId` (which could be a hash of the project name or a unique UUID) and an owner's wallet.
 
 ### Workspace Binding
 Every claimed repository is associated with a `contextId`. This binding ensures that only members of that workspace can interact with the repository's on-chain data.
