@@ -129,7 +129,7 @@ describe("CodeQuillDelegation", function () {
           r,
           s,
         ),
-      ).to.be.revertedWith("BadSigner");
+      ).to.be.revertedWith("bad signer");
     });
 
     it("reverts when signature deadline is passed", async function () {
@@ -165,7 +165,7 @@ describe("CodeQuillDelegation", function () {
           r,
           s,
         ),
-      ).to.be.revertedWith("SigExpired");
+      ).to.be.revertedWith("sig expired");
     });
 
     it("reverts when expiry is not in the future", async function () {
@@ -201,7 +201,7 @@ describe("CodeQuillDelegation", function () {
           r,
           s,
         ),
-      ).to.be.revertedWith("BadExpiry");
+      ).to.be.revertedWith("bad expiry");
     });
 
     it("reverts on zero context", async function () {
@@ -237,7 +237,7 @@ describe("CodeQuillDelegation", function () {
           r,
           s,
         ),
-      ).to.be.revertedWith("ZeroContext");
+      ).to.be.revertedWith("zero context");
     });
 
     it("reverts on zero relayer address", async function () {
@@ -273,7 +273,7 @@ describe("CodeQuillDelegation", function () {
           r,
           s,
         ),
-      ).to.be.revertedWith("ZeroAddr");
+      ).to.be.revertedWith("zero relayer");
     });
   });
 
@@ -457,11 +457,11 @@ describe("CodeQuillDelegation", function () {
       const contextId = ethers.encodeBytes32String(contextIdLabel);
       await expect(
         delegation.connect(owner).revoke(ethers.ZeroAddress, contextId),
-      ).to.be.revertedWith("ZeroAddr");
+      ).to.be.revertedWith("zero relayer");
 
       await expect(
         delegation.connect(owner).revoke(relayer.address, ethers.ZeroHash),
-      ).to.be.revertedWith("ZeroContext");
+      ).to.be.revertedWith("zero context");
     });
 
     it("allows revocation with signature", async function () {
@@ -562,7 +562,7 @@ describe("CodeQuillDelegation", function () {
           r,
           s,
         ),
-      ).to.be.revertedWith("BadSigner");
+      ).to.be.revertedWith("bad signer");
     });
 
     it("reverts on revokeWithSig with expired deadline", async function () {
@@ -596,7 +596,7 @@ describe("CodeQuillDelegation", function () {
           r,
           s,
         ),
-      ).to.be.revertedWith("SigExpired");
+      ).to.be.revertedWith("sig expired");
     });
   });
 });

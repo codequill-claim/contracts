@@ -72,6 +72,14 @@ contract CodeQuillDelegation is EIP712 {
 
     // ---- Views ----
 
+    /**
+     * @notice Check if a relayer is authorized by an owner for a specific scope in a context.
+     * @param owner_ The address of the owner who delegated the authority.
+     * @param relayer_ The address of the relayer being checked.
+     * @param scope The scope bitmask being requested.
+     * @param contextId The workspace identifier.
+     * @return bool True if authorized, false otherwise.
+     */
     function isAuthorized(
         address owner_,
         address relayer_,
@@ -108,10 +116,11 @@ contract CodeQuillDelegation is EIP712 {
         bytes32 r,
         bytes32 s
     ) external {
-        if (block.timestamp > deadline) revert("SigExpired");
-        if (expiry <= block.timestamp) revert("BadExpiry");
-        if (owner_ == address(0) || relayer_ == address(0)) revert("ZeroAddr");
-        if (contextId == bytes32(0)) revert("ZeroContext");
+        require(block.timestamp <= deadline, "sig expired");
+        require(expiry > block.timestamp, "bad expiry");
+        require(owner_ != address(0), "zero owner");
+        require(relayer_ != address(0), "zero relayer");
+        require(contextId != bytes32(0), "zero context");
 
         uint256 nonce = nonces[owner_];
 
@@ -130,7 +139,7 @@ contract CodeQuillDelegation is EIP712 {
 
         bytes32 digest = _hashTypedDataV4(structHash);
         address signer = ECDSA.recover(digest, v, r, s);
-        if (signer != owner_) revert("BadSigner");
+        require(signer == owner_, "bad signer");
 
         nonces[owner_] = nonce + 1;
 
@@ -142,10 +151,12 @@ contract CodeQuillDelegation is EIP712 {
 
     /**
      * @notice Revoke delegation for msg.sender -> relayer_ in a given contextId.
+     * @param relayer_ The address of the relayer to revoke.
+     * @param contextId The workspace identifier.
      */
     function revoke(address relayer_, bytes32 contextId) external {
-        if (relayer_ == address(0)) revert("ZeroAddr");
-        if (contextId == bytes32(0)) revert("ZeroContext");
+        require(relayer_ != address(0), "zero relayer");
+        require(contextId != bytes32(0), "zero context");
 
         scopesOf[msg.sender][relayer_][contextId] = 0;
         expiryOf[msg.sender][relayer_][contextId] = 0;
@@ -168,9 +179,10 @@ contract CodeQuillDelegation is EIP712 {
         bytes32 r,
         bytes32 s
     ) external {
-        if (block.timestamp > deadline) revert("SigExpired");
-        if (owner_ == address(0) || relayer_ == address(0)) revert("ZeroAddr");
-        if (contextId == bytes32(0)) revert("ZeroContext");
+        require(block.timestamp <= deadline, "sig expired");
+        require(owner_ != address(0), "zero owner");
+        require(relayer_ != address(0), "zero relayer");
+        require(contextId != bytes32(0), "zero context");
 
         uint256 nonce = nonces[owner_];
 
@@ -187,7 +199,7 @@ contract CodeQuillDelegation is EIP712 {
 
         bytes32 digest = _hashTypedDataV4(structHash);
         address signer = ECDSA.recover(digest, v, r, s);
-        if (signer != owner_) revert("BadSigner");
+        require(signer == owner_, "bad signer");
 
         nonces[owner_] = nonce + 1;
 
