@@ -47,8 +47,8 @@ contract CodeQuillRepositoryRegistry {
         address delegationAddr,
         address workspaceAddr
     ) {
-        require(delegationAddr != address(0), "delegation zero");
-        require(workspaceAddr != address(0), "workspace zero");
+        require(delegationAddr != address(0), "zero delegation");
+        require(workspaceAddr != address(0), "zero workspace");
         delegation = ICodeQuillDelegation(delegationAddr);
         workspace = ICodeQuillWorkspaceRegistry(workspaceAddr);
     }
@@ -99,6 +99,7 @@ contract CodeQuillRepositoryRegistry {
         emit RepoClaimed(repoId, owner_, contextId, meta);
     }
 
+    /// @notice Get all repo IDs claimed by an owner.
     function getReposByOwner(address owner_) external view returns (bytes32[] memory) {
         return reposByOwner[owner_];
     }

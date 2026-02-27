@@ -105,6 +105,7 @@ contract CodeQuillAttestationRegistry {
         _;
     }
 
+    /// @notice Create a new attestation for a release.
     function createAttestation(
         bytes32 releaseId,
         bytes32 artifactDigest,
@@ -160,6 +161,7 @@ contract CodeQuillAttestationRegistry {
         );
     }
 
+    /// @notice Revoke an existing attestation.
     function revokeAttestation(
         bytes32 releaseId,
         bytes32 artifactDigest,
@@ -206,16 +208,19 @@ contract CodeQuillAttestationRegistry {
         require(ok, "not authorized");
     }
 
+    /// @notice Check if an attestation is revoked.
     function isRevoked(bytes32 releaseId, bytes32 artifactDigest) external view returns (bool) {
         uint256 idx1 = attestationIndexByReleaseDigest[releaseId][artifactDigest];
         if (idx1 == 0) return false;
         return attestationsByRelease[releaseId][idx1 - 1].revoked;
     }
 
+    /// @notice Get the total number of attestations for a release.
     function getAttestationsCount(bytes32 releaseId) external view returns (uint256) {
         return attestationsByRelease[releaseId].length;
     }
 
+    /// @notice Get an attestation by its index for a release.
     function getAttestation(bytes32 releaseId, uint256 index)
     external
     view
@@ -232,6 +237,7 @@ contract CodeQuillAttestationRegistry {
         return (a.artifactDigest, a.attestationCid, a.timestamp, a.author, a.revoked);
     }
 
+    /// @notice Get an attestation by its artifact digest for a release.
     function getAttestationByDigest(bytes32 releaseId, bytes32 artifactDigest)
     external
     view

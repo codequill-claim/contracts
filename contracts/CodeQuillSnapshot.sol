@@ -126,10 +126,12 @@ contract CodeQuillSnapshotRegistry {
         );
     }
 
+    /// @notice Get the total number of snapshots for a repo.
     function getSnapshotsCount(bytes32 repoId) external view returns (uint256) {
         return snapshotsOf[repoId].length;
     }
 
+    /// @notice Get a snapshot by its index for a repo.
     function getSnapshot(bytes32 repoId, uint256 index)
     external
     view
@@ -146,6 +148,7 @@ contract CodeQuillSnapshotRegistry {
         return (s.commitHash, s.merkleRoot, s.manifestCid, s.timestamp, s.author);
     }
 
+    /// @notice Get a snapshot by its Merkle root for a repo.
     function getSnapshotByRoot(bytes32 repoId, bytes32 merkleRoot)
     external
     view

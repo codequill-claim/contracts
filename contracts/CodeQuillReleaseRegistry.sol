@@ -122,6 +122,7 @@ contract CodeQuillReleaseRegistry {
         snapshotRegistry = ICodeQuillSnapshotRegistry(snapshotRegistryAddr);
     }
 
+    /// @notice Set the Aragon DAO executor for a context.
     function setDaoExecutor(
         bytes32 contextId,
         address author,
@@ -164,6 +165,7 @@ contract CodeQuillReleaseRegistry {
         _;
     }
 
+    /// @notice Anchor a new release record.
     function anchorRelease(
         bytes32 projectId,
         bytes32 releaseId,
@@ -233,6 +235,7 @@ contract CodeQuillReleaseRegistry {
         );
     }
 
+    /// @notice Accept a pending release (governance).
     function accept(bytes32 releaseId) external onlyGovernance(releaseId) {
         Release storage r = releaseById[releaseId];
         require(r.status == GouvernanceStatus.PENDING, "not in pending status");
@@ -245,6 +248,7 @@ contract CodeQuillReleaseRegistry {
         emit GouvernanceStatusChanged(releaseId, GouvernanceStatus.ACCEPTED, msg.sender, block.timestamp);
     }
 
+    /// @notice Reject a pending release (governance).
     function reject(bytes32 releaseId) external onlyGovernance(releaseId) {
         Release storage r = releaseById[releaseId];
         require(r.status == GouvernanceStatus.PENDING, "not in pending status");
@@ -257,6 +261,7 @@ contract CodeQuillReleaseRegistry {
         emit GouvernanceStatusChanged(releaseId, GouvernanceStatus.REJECTED, msg.sender, block.timestamp);
     }
 
+    /// @notice Revoke a release.
     function revokeRelease(bytes32 projectId, bytes32 releaseId, address author) external {
         Release storage r = releaseById[releaseId];
         require(r.timestamp != 0, "release not found");
@@ -273,6 +278,7 @@ contract CodeQuillReleaseRegistry {
         emit ReleaseRevoked(projectId, releaseId, author, block.timestamp);
     }
 
+    /// @notice Supersede a revoked release with a new one.
     function supersedeRelease(bytes32 projectId, bytes32 oldReleaseId, bytes32 newReleaseId, address author) external {
         Release storage oldR = releaseById[oldReleaseId];
         require(oldR.timestamp != 0, "old release not found");
@@ -298,10 +304,12 @@ contract CodeQuillReleaseRegistry {
 
     // ---- Views ----
 
+    /// @notice Get the number of releases for a project.
     function getReleasesCount(bytes32 projectId) external view returns (uint256) {
         return releasesOfProject[projectId].length;
     }
 
+    /// @notice Get a release by its index within a project.
     function getReleaseByIndex(bytes32 projectId, uint256 index)
     external
     view
@@ -341,6 +349,7 @@ contract CodeQuillReleaseRegistry {
         );
     }
 
+    /// @notice Get a release by its ID.
     function getReleaseById(bytes32 releaseId)
     external
     view
@@ -379,6 +388,7 @@ contract CodeQuillReleaseRegistry {
         );
     }
 
+    /// @notice Get the governance status of a release.
     function getGouvernanceStatus(bytes32 releaseId) external view returns (GouvernanceStatus status) {
         Release storage r = releaseById[releaseId];
         require(r.timestamp != 0, "release not found");

@@ -139,10 +139,12 @@ contract CodeQuillBackupRegistry {
         );
     }
 
+    /// @notice Check if a backup exists for a given repo and snapshot.
     function hasBackup(bytes32 repoId, bytes32 snapshotMerkleRoot) external view returns (bool) {
         return backupsOf[repoId][snapshotMerkleRoot].timestamp != 0;
     }
 
+    /// @notice Get backup metadata for a given repo and snapshot.
     function getBackup(bytes32 repoId, bytes32 snapshotMerkleRoot)
     external
     view
