@@ -41,3 +41,14 @@ npx hardhat keystore set SEPOLIA_RPC
 npx hardhat keystore set DEPLOYER_OPHELIOS_PK
 npx hardhat ignition deploy ignition/modules/Codequill.ts --network sepolia
 ```
+
+## Verify & Publish Contracts
+To verify contract source code on block explorers (like Etherscan) using the Standard-Json-Input method:
+
+1. Generate the Standard-Json-Input files:
+```
+npm run generate-standard-json
+```
+2. The generated files will be located in the `standard-json-input/` folder.
+3. On the block explorer's verification page, select **Standard-Json-Input** as the compiler type.
+4. Upload the corresponding `.standard-input.json` file for your contract.

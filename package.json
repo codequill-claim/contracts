@@ -6,7 +6,8 @@
     "build": "hardhat build",
     "compile": "hardhat compile",
     "clean": "hardhat clean",
-    "test": "hardhat test"
+    "test": "hardhat test",
+    "generate-standard-json": "node scripts/generate-standard-json.js"
   },
   "devDependencies": {
     "@nomicfoundation/hardhat-ignition": "^3.0.3",

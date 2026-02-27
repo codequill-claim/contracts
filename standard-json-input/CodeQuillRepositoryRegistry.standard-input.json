@@ -1,0 +1,31 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "evmVersion": "cancun",
+    "optimizer": {
+      "enabled": true,
+      "runs": 200
+    },
+    "outputSelection": {
+      "*": {
+        "": [
+          "ast"
+        ],
+        "*": [
+          "abi",
+          "evm.bytecode",
+          "evm.deployedBytecode",
+          "evm.methodIdentifiers",
+          "metadata"
+        ]
+      }
+    },
+    "remappings": [],
+    "viaIR": true
+  },
+  "sources": {
+    "project/contracts/CodeQuillRepositoryRegistry.sol": {
+      "content": "// SPDX-License-Identifier: MIT\npragma solidity ^0.8.24;\n\ninterface ICodeQuillDelegation {\n    function SCOPE_CLAIM() external view returns (uint256);\n\n    function isAuthorized(\n        address owner_,\n        address relayer_,\n        uint256 scope,\n        bytes32 contextId\n    ) external view returns (bool);\n}\n\ninterface ICodeQuillWorkspaceRegistry {\n    function isMember(bytes32 contextId, address wallet) external view returns (bool);\n}\n\n/// @title CodeQuillRepositoryRegistry\n/// @notice Repository claim registry (repoId -> owner wallet) with context-scoped relayer delegation.\n/// @dev \"contextId\" is your workspace identifier (bytes32). No on-chain workspace registry required.\ncontract CodeQuillRepositoryRegistry {\n    /// @notice repoId (bytes32) -> owner (wallet)\n    mapping(bytes32 => address) public repoOwner;\n\n    /// @notice repoId (bytes32) -> contextId (workspace identifier)\n    mapping(bytes32 => bytes32) public repoContextId;\n\n    /// @dev Convenience list for UI/off-chain; not used for authorization\n    mapping(address => bytes32[]) private reposByOwner;\n\n    ICodeQuillDelegation public immutable delegation;\n    ICodeQuillWorkspaceRegistry public immutable workspace;\n\n    event RepoClaimed(bytes32 indexed repoId, address indexed owner, bytes32 indexed contextId, string meta);\n\n    /// @notice Emitted when repo ownership and/or context changes.\n    event RepoTransferred(\n        bytes32 indexed repoId,\n        address indexed oldOwner,\n        address indexed newOwner,\n        bytes32 oldContextId,\n        bytes32 newContextId\n    );\n\n    constructor(\n        address delegationAddr,\n        address workspaceAddr\n    ) {\n        require(delegationAddr != address(0), \"delegation zero\");\n        require(workspaceAddr != address(0), \"workspace zero\");\n        delegation = ICodeQuillDelegation(delegationAddr);\n        workspace = ICodeQuillWorkspaceRegistry(workspaceAddr);\n    }\n\n    /// @notice Check if a repoId has already been claimed.\n    function isClaimed(bytes32 repoId) external view returns (bool) {\n        return repoOwner[repoId] != address(0);\n    }\n\n    /// @notice Batch read: returns an owner address for each repoId (address(0) if unclaimed).\n    /// @dev Designed for off-chain batch queries via a single eth_call.\n    function repoOwners(bytes32[] calldata ids) external view returns (address[] memory owners) {\n        owners = new address[](ids.length);\n        for (uint256 i = 0; i < ids.length; i++) {\n            owners[i] = repoOwner[ids[i]];\n        }\n    }\n\n    /// @notice Claim a repo.\n    /// @dev Works for both:\n    ///  - direct EOA claim (msg.sender == owner_), and\n    ///  - relayed claim (msg.sender delegated by owner_ for SCOPE_CLAIM in contextId).\n    ///\n    /// Membership enforcement:\n    /// - owner_ must be a member of the workspace contextId.\n    function claimRepo(\n        bytes32 repoId,\n        bytes32 contextId,\n        string calldata meta,\n        address owner_\n    ) external {\n        require(contextId != bytes32(0), \"zero context\");\n        require(owner_ != address(0), \"zero owner\");\n        require(repoOwner[repoId] == address(0), \"already claimed\");\n\n        require(workspace.isMember(contextId, owner_), \"owner not member\");\n\n        if (msg.sender != owner_) {\n            bool isDelegated = delegation.isAuthorized(owner_, msg.sender, delegation.SCOPE_CLAIM(), contextId);\n            require(isDelegated, \"not authorized\");\n        }\n\n        repoOwner[repoId] = owner_;\n        repoContextId[repoId] = contextId;\n\n        reposByOwner[owner_].push(repoId);\n\n        emit RepoClaimed(repoId, owner_, contextId, meta);\n    }\n\n    function getReposByOwner(address owner_) external view returns (bytes32[] memory) {\n        return reposByOwner[owner_];\n    }\n\n    /// @notice Transfer a claimed repo to a new owner AND/OR move it to a new contextId.\n    /// @dev Allowed if:\n    ///  - msg.sender == current owner (direct), OR\n    ///  - msg.sender is delegated by current owner for SCOPE_CLAIM in the CURRENT repo context.\n    ///\n    /// Membership enforcement:\n    /// - newOwner must be a member of newContextId.\n    ///\n    /// No-op prevention:\n    /// - disallow transfers that don't change owner AND don't change context.\n    function transferRepo(\n        bytes32 repoId,\n        address newOwner,\n        bytes32 newContextId\n    ) external {\n        require(newContextId != bytes32(0), \"zero newContext\");\n        require(newOwner != address(0), \"zero newOwner\");\n\n        address old = repoOwner[repoId];\n        require(old != address(0), \"not claimed\");\n\n        bytes32 oldContextId = repoContextId[repoId];\n        require(oldContextId != bytes32(0), \"missing context\");\n\n        require(newOwner != old || newContextId != oldContextId, \"no change\");\n\n        if (msg.sender != old) {\n            bool isDelegated = delegation.isAuthorized(old, msg.sender, delegation.SCOPE_CLAIM(), oldContextId);\n            require(isDelegated, \"not authorized\");\n        }\n\n        require(workspace.isMember(newContextId, newOwner), \"newOwner not member\");\n\n        repoOwner[repoId] = newOwner;\n        repoContextId[repoId] = newContextId;\n\n        reposByOwner[newOwner].push(repoId);\n\n        emit RepoTransferred(repoId, old, newOwner, oldContextId, newContextId);\n    }\n}"
+    }
+  }
+}
