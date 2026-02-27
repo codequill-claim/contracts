@@ -42,6 +42,11 @@ npx hardhat keystore set DEPLOYER_PK
 npx hardhat ignition deploy ignition/modules/Codequill.ts --network sepolia
 ```
 
+## Generate ABI files
+```
+npm run generate-abi
+```
+
 ## Verify & Publish Contracts
 To verify contract source code on block explorers (like Etherscan) using the Standard-Json-Input method:
 
