@@ -67,7 +67,7 @@
       {
         "indexed": false,
         "internalType": "string",
-        "name": "backupCid",
+        "name": "preservationCid",
         "type": "string"
       },
       {
@@ -77,7 +77,7 @@
         "type": "uint256"
       }
     ],
-    "name": "BackupAnchored",
+    "name": "PreservationAnchored",
     "type": "event"
   },
   {
@@ -109,7 +109,7 @@
       },
       {
         "internalType": "string",
-        "name": "backupCid",
+        "name": "preservationCid",
         "type": "string"
       },
       {
@@ -118,7 +118,7 @@
         "type": "address"
       }
     ],
-    "name": "anchorBackup",
+    "name": "anchorPreservation",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"
@@ -149,7 +149,7 @@
         "type": "bytes32"
       }
     ],
-    "name": "getBackup",
+    "name": "getPreservation",
     "outputs": [
       {
         "internalType": "bytes32",
@@ -163,7 +163,7 @@
       },
       {
         "internalType": "string",
-        "name": "backupCid",
+        "name": "preservationCid",
         "type": "string"
       },
       {
@@ -193,7 +193,7 @@
         "type": "bytes32"
       }
     ],
-    "name": "hasBackup",
+    "name": "hasPreservation",
     "outputs": [
       {
         "internalType": "bool",

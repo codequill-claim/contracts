@@ -143,7 +143,7 @@
   },
   {
     "inputs": [],
-    "name": "SCOPE_BACKUP",
+    "name": "SCOPE_CLAIM",
     "outputs": [
       {
         "internalType": "uint256",
@@ -156,7 +156,7 @@
   },
   {
     "inputs": [],
-    "name": "SCOPE_CLAIM",
+    "name": "SCOPE_PRESERVATION",
     "outputs": [
       {
         "internalType": "uint256",

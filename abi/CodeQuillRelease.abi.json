@@ -81,12 +81,6 @@
       {
         "indexed": true,
         "internalType": "bytes32",
-        "name": "projectId",
-        "type": "bytes32"
-      },
-      {
-        "indexed": true,
-        "internalType": "bytes32",
         "name": "releaseId",
         "type": "bytes32"
       },
@@ -94,6 +88,18 @@
         "indexed": true,
         "internalType": "bytes32",
         "name": "contextId",
+        "type": "bytes32"
+      },
+      {
+        "indexed": false,
+        "internalType": "bytes32",
+        "name": "repoId",
+        "type": "bytes32"
+      },
+      {
+        "indexed": false,
+        "internalType": "bytes32",
+        "name": "merkleRoot",
         "type": "bytes32"
       },
       {
@@ -136,12 +142,6 @@
       {
         "indexed": true,
         "internalType": "bytes32",
-        "name": "projectId",
-        "type": "bytes32"
-      },
-      {
-        "indexed": true,
-        "internalType": "bytes32",
         "name": "releaseId",
         "type": "bytes32"
       },
@@ -164,12 +164,6 @@
   {
     "anonymous": false,
     "inputs": [
-      {
-        "indexed": true,
-        "internalType": "bytes32",
-        "name": "projectId",
-        "type": "bytes32"
-      },
       {
         "indexed": true,
         "internalType": "bytes32",
@@ -215,11 +209,6 @@
     "inputs": [
       {
         "internalType": "bytes32",
-        "name": "projectId",
-        "type": "bytes32"
-      },
-      {
-        "internalType": "bytes32",
         "name": "releaseId",
         "type": "bytes32"
       },
@@ -249,14 +238,14 @@
         "type": "address"
       },
       {
-        "internalType": "bytes32[]",
-        "name": "repoIds",
-        "type": "bytes32[]"
+        "internalType": "bytes32",
+        "name": "repoId",
+        "type": "bytes32"
       },
       {
-        "internalType": "bytes32[]",
-        "name": "merkleRoots",
-        "type": "bytes32[]"
+        "internalType": "bytes32",
+        "name": "merkleRoot",
+        "type": "bytes32"
       }
     ],
     "name": "anchorRelease",
@@ -332,12 +321,17 @@
       },
       {
         "internalType": "bytes32",
-        "name": "projectId",
+        "name": "contextId",
         "type": "bytes32"
       },
       {
         "internalType": "bytes32",
-        "name": "contextId",
+        "name": "repoId",
+        "type": "bytes32"
+      },
+      {
+        "internalType": "bytes32",
+        "name": "merkleRoot",
         "type": "bytes32"
       },
       {
@@ -389,109 +383,6 @@
         "internalType": "address",
         "name": "statusAuthor",
         "type": "address"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "bytes32",
-        "name": "projectId",
-        "type": "bytes32"
-      },
-      {
-        "internalType": "uint256",
-        "name": "index",
-        "type": "uint256"
-      }
-    ],
-    "name": "getReleaseByIndex",
-    "outputs": [
-      {
-        "internalType": "bytes32",
-        "name": "id",
-        "type": "bytes32"
-      },
-      {
-        "internalType": "bytes32",
-        "name": "pId",
-        "type": "bytes32"
-      },
-      {
-        "internalType": "bytes32",
-        "name": "contextId",
-        "type": "bytes32"
-      },
-      {
-        "internalType": "string",
-        "name": "manifestCid",
-        "type": "string"
-      },
-      {
-        "internalType": "string",
-        "name": "name",
-        "type": "string"
-      },
-      {
-        "internalType": "uint256",
-        "name": "timestamp",
-        "type": "uint256"
-      },
-      {
-        "internalType": "address",
-        "name": "author",
-        "type": "address"
-      },
-      {
-        "internalType": "address",
-        "name": "governanceAuthority",
-        "type": "address"
-      },
-      {
-        "internalType": "bytes32",
-        "name": "supersededBy",
-        "type": "bytes32"
-      },
-      {
-        "internalType": "bool",
-        "name": "revoked",
-        "type": "bool"
-      },
-      {
-        "internalType": "enum CodeQuillReleaseRegistry.GouvernanceStatus",
-        "name": "status",
-        "type": "uint8"
-      },
-      {
-        "internalType": "uint256",
-        "name": "statusTimestamp",
-        "type": "uint256"
-      },
-      {
-        "internalType": "address",
-        "name": "statusAuthor",
-        "type": "address"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "bytes32",
-        "name": "projectId",
-        "type": "bytes32"
-      }
-    ],
-    "name": "getReleasesCount",
-    "outputs": [
-      {
-        "internalType": "uint256",
-        "name": "",
-        "type": "uint256"
       }
     ],
     "stateMutability": "view",
@@ -540,12 +431,17 @@
       },
       {
         "internalType": "bytes32",
-        "name": "projectId",
+        "name": "contextId",
         "type": "bytes32"
       },
       {
         "internalType": "bytes32",
-        "name": "contextId",
+        "name": "repoId",
+        "type": "bytes32"
+      },
+      {
+        "internalType": "bytes32",
+        "name": "merkleRoot",
         "type": "bytes32"
       },
       {
@@ -604,35 +500,6 @@
   },
   {
     "inputs": [
-      {
-        "internalType": "bytes32",
-        "name": "",
-        "type": "bytes32"
-      },
-      {
-        "internalType": "bytes32",
-        "name": "",
-        "type": "bytes32"
-      }
-    ],
-    "name": "releaseIndexInProject",
-    "outputs": [
-      {
-        "internalType": "uint256",
-        "name": "",
-        "type": "uint256"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "bytes32",
-        "name": "projectId",
-        "type": "bytes32"
-      },
       {
         "internalType": "bytes32",
         "name": "releaseId",
@@ -687,11 +554,6 @@
   },
   {
     "inputs": [
-      {
-        "internalType": "bytes32",
-        "name": "projectId",
-        "type": "bytes32"
-      },
       {
         "internalType": "bytes32",
         "name": "oldReleaseId",
