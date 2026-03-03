@@ -20,8 +20,9 @@ Every release anchored in the registry is stored as a `Release` object.
 | Field | Type | Description |
 | :--- | :--- | :--- |
 | `id` | `bytes32` | Unique identifier for the release (usually a hash). |
-| `projectId` | `bytes32` | Groups multiple releases under a single software project. |
 | `contextId` | `bytes32` | The **Workspace ID**. Determines membership and governance scope. |
+| `repoId` | `bytes32` | The ID of the repository the release is bound to. |
+| `merkleRoot` | `bytes32` | The Merkle root of the snapshot the release is bound to. |
 | `manifestCid` | `string` | IPFS CID for the release manifest (metadata, changelog, etc.). |
 | `name` | `string` | Version string (e.g., `v1.0.4`). |
 | `timestamp` | `uint256` | Block timestamp when the release was anchored. |
@@ -46,5 +47,3 @@ This mapping is critical for CodeQuill's multi-tenant design:
 ## Storage & Discovery
 
 *   **`releaseById`**: Direct lookup of any release by its ID.
-*   **`releasesOfProject`**: A list of all `releaseIds` associated with a `projectId`, allowing for version history reconstruction.
-*   **`releaseIndexInProject`**: Helper mapping to find a release's position within its project's history.

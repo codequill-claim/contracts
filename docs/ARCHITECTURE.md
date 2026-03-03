@@ -86,7 +86,7 @@ sequenceDiagram
     Member->>SR: createSnapshot(repoId, contextId, commit, root, ...)
 
     Note over Member, AR: Release Cycle
-    Member->>RL: anchorRelease(projectId, releaseId, contextId, ...)
+    Member->>RL: anchorRelease(releaseId, contextId, ...)
     Gov->>RL: updateGouvernanceStatus(releaseId, ACCEPTED)
 
     Note over Member, AR: Verification

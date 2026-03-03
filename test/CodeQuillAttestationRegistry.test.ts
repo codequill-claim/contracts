@@ -71,7 +71,6 @@ describe("CodeQuillAttestationRegistry", function () {
   });
 
   async function setupAcceptedRelease(releaseId: string) {
-    const projectId = ethers.id("project-1");
     const manifestCid = "manifest";
     const name = "v1";
     const root = ethers.id("root-1");
@@ -94,20 +93,19 @@ describe("CodeQuillAttestationRegistry", function () {
     await releaseRegistry
       .connect(author)
       .anchorRelease(
-        projectId,
         releaseId,
         contextId,
         manifestCid,
         name,
         author.address,
         governance.address,
-        [repoId],
-        [root],
+        repoId,
+        root,
       );
 
     await releaseRegistry.connect(governance).accept(releaseId);
 
-    return { projectId, root };
+    return { root };
   }
 
   async function delegateAttest(ownerSigner: any, relayerSigner: any) {
@@ -179,7 +177,6 @@ describe("CodeQuillAttestationRegistry", function () {
       const releaseId = ethers.id("release-pending");
 
       // create a pending release (not accepted)
-      const projectId = ethers.id("project-pending");
       const root = ethers.id("root-pending");
       await repository
         .connect(author)
@@ -197,15 +194,14 @@ describe("CodeQuillAttestationRegistry", function () {
       await releaseRegistry
         .connect(author)
         .anchorRelease(
-          projectId,
           releaseId,
           contextId,
           "manifest",
           "v1",
           author.address,
           governance.address,
-          [repoId],
-          [root],
+          repoId,
+          root,
         );
 
       await expect(

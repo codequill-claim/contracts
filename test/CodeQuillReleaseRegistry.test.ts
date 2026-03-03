@@ -136,29 +136,28 @@ describe("CodeQuillReleaseRegistry", function () {
     it("anchors a release when called by the author", async function () {
       const { repo1Id, root1 } = await setupTwoReposAndSnapshots();
 
-      const projectId = ethers.id("project1");
       const releaseId = ethers.id("release1");
 
       await expect(
         releaseRegistry
           .connect(author)
           .anchorRelease(
-            projectId,
             releaseId,
             contextId,
             "QmRelease123",
             "v1.0.0",
             author.address,
             governance.address,
-            [repo1Id],
-            [root1],
+            repo1Id,
+            root1,
           ),
       )
         .to.emit(releaseRegistry, "ReleaseAnchored")
         .withArgs(
-          projectId,
           releaseId,
           contextId,
+          repo1Id,
+          root1,
           author.address,
           governance.address,
           "QmRelease123",
@@ -176,22 +175,20 @@ describe("CodeQuillReleaseRegistry", function () {
       const { repo1Id, repo2Id, root1, root2 } = await setupTwoReposAndSnapshots();
       await delegate(await delegation.SCOPE_RELEASE(), author, relayer);
 
-      const projectId = ethers.id("project2");
       const releaseId = ethers.id("release-relayed");
 
       await expect(
         releaseRegistry
           .connect(relayer)
           .anchorRelease(
-            projectId,
             releaseId,
             contextId,
             "cid",
             "v1",
             author.address,
             governance.address,
-            [repo1Id, repo2Id],
-            [root1, root2],
+            repo1Id,
+            root1,
           ),
       ).to.emit(releaseRegistry, "ReleaseAnchored");
     });
@@ -203,15 +200,14 @@ describe("CodeQuillReleaseRegistry", function () {
         releaseRegistry
           .connect(other)
           .anchorRelease(
-            ethers.id("p"),
             ethers.id("r"),
             contextId,
             "cid",
             "v1",
             author.address,
             governance.address,
-            [repo1Id],
-            [root1],
+            repo1Id,
+            root1,
           ),
       ).to.be.revertedWith("not authorized");
     });
@@ -223,15 +219,14 @@ describe("CodeQuillReleaseRegistry", function () {
         releaseRegistry
           .connect(author)
           .anchorRelease(
-            ethers.id("p"),
             ethers.id("r"),
             contextId,
             "cid",
             "v1",
             author.address,
             daoExecutor.address,
-            [repo1Id],
-            [root1],
+            repo1Id,
+            root1,
           ),
       ).to.be.revertedWith("governance not member");
     });
@@ -246,15 +241,14 @@ describe("CodeQuillReleaseRegistry", function () {
         releaseRegistry
           .connect(author)
           .anchorRelease(
-            ethers.id("p"),
             ethers.id("r"),
             contextId,
             "cid",
             "v1",
             author.address,
             governance.address,
-            [repo1Id],
-            [ethers.id("missing")],
+            repo1Id,
+            ethers.id("missing"),
           ),
       ).to.be.revertedWith("snapshot not found");
     });
@@ -263,24 +257,22 @@ describe("CodeQuillReleaseRegistry", function () {
   describe("governance actions", function () {
     async function anchorOneRelease() {
       const { repo1Id, root1 } = await setupTwoReposAndSnapshots();
-      const projectId = ethers.id("project-g");
       const releaseId = ethers.id("release-g");
 
       await releaseRegistry
         .connect(author)
         .anchorRelease(
-          projectId,
           releaseId,
           contextId,
           "cid",
           "v1",
           author.address,
           governance.address,
-          [repo1Id],
-          [root1],
+          repo1Id,
+          root1,
         );
 
-      return { projectId, releaseId };
+      return { releaseId };
     }
 
     it("allows governanceAuthority to accept and reject pending releases", async function () {
@@ -355,94 +347,82 @@ describe("CodeQuillReleaseRegistry", function () {
         return { repo1Id, root1, root2 };
       })();
 
-      const projectId = ethers.id("project-sr");
       const release1Id = ethers.id("r1");
       const release2Id = ethers.id("r2");
 
       await releaseRegistry
         .connect(author)
         .anchorRelease(
-          projectId,
           release1Id,
           contextId,
           "cid",
           "v1",
           author.address,
           governance.address,
-          [repo1Id],
-          [root1],
+          repo1Id,
+          root1,
         );
       await releaseRegistry
         .connect(author)
         .anchorRelease(
-          projectId,
           release2Id,
           contextId,
           "cid",
           "v2",
           author.address,
           governance.address,
-          [repo1Id],
-          [root2],
+          repo1Id,
+          root2,
         );
 
       await expect(
-        releaseRegistry.connect(author).supersedeRelease(projectId, release1Id, release2Id, author.address),
+        releaseRegistry.connect(author).supersedeRelease(release1Id, release2Id, author.address),
       ).to.be.revertedWith("old release must be revoked");
 
-      await expect(releaseRegistry.connect(author).revokeRelease(projectId, release1Id, author.address))
+      await expect(releaseRegistry.connect(author).revokeRelease(release1Id, author.address))
         .to.emit(releaseRegistry, "ReleaseRevoked")
-        .withArgs(projectId, release1Id, author.address, anyValue);
+        .withArgs(release1Id, author.address, anyValue);
 
       await expect(
-        releaseRegistry.connect(author).supersedeRelease(projectId, release1Id, release2Id, author.address),
+        releaseRegistry.connect(author).supersedeRelease(release1Id, release2Id, author.address),
       )
         .to.emit(releaseRegistry, "ReleaseSuperseded")
-        .withArgs(projectId, release1Id, release2Id, author.address, anyValue);
+        .withArgs(release1Id, release2Id, author.address, anyValue);
 
       const r = await releaseRegistry.getReleaseById(release1Id);
       expect(r.supersededBy).to.equal(release2Id);
 
       // delegated revoke
       await delegate(await delegation.SCOPE_RELEASE(), author, relayer);
-      await expect(releaseRegistry.connect(relayer).revokeRelease(projectId, release2Id, author.address))
+      await expect(releaseRegistry.connect(relayer).revokeRelease(release2Id, author.address))
         .to.emit(releaseRegistry, "ReleaseRevoked")
-        .withArgs(projectId, release2Id, author.address, anyValue);
+        .withArgs(release2Id, author.address, anyValue);
     });
   });
 
   describe("views", function () {
-    it("supports list and get by id", async function () {
+    it("supports get by id", async function () {
       const { repo1Id, root1 } = await setupTwoReposAndSnapshots();
-      const projectId = ethers.id("project-views");
       const releaseId = ethers.id("release-view");
 
       await releaseRegistry
         .connect(author)
         .anchorRelease(
-          projectId,
           releaseId,
           contextId,
           "cid",
           "v1",
           author.address,
           governance.address,
-          [repo1Id],
-          [root1],
+          repo1Id,
+          root1,
         );
 
-      expect(await releaseRegistry.getReleasesCount(projectId)).to.equal(1);
-      const byIndex = await releaseRegistry.getReleaseByIndex(projectId, 0);
-      expect(byIndex.id).to.equal(releaseId);
-      expect(byIndex.name).to.equal("v1");
-
       const byId = await releaseRegistry.getReleaseById(releaseId);
-      expect(byId.projectId).to.equal(projectId);
+      expect(byId.id).to.equal(releaseId);
+      expect(byId.name).to.equal("v1");
       expect(byId.status).to.equal(0n);
 
-      await expect(releaseRegistry.getReleaseByIndex(projectId, 10)).to.be.revertedWith(
-        "invalid index",
-      );
       await expect(releaseRegistry.getReleaseById(ethers.id("ghost"))).to.be.revertedWith(
         "not found",
       );

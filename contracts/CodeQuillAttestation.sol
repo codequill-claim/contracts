@@ -24,8 +24,9 @@ interface ICodeQuillReleaseRegistry {
     view
     returns (
         bytes32 id,
-        bytes32 projectId,
         bytes32 contextId,
+        bytes32 repoId,
+        bytes32 merkleRoot,
         string memory manifestCid,
         string memory name,
         uint256 timestamp,
@@ -123,7 +124,7 @@ contract CodeQuillAttestationRegistry {
         address ignoredStatusAuthor;
 
         // Destructure only what we actually need.
-        (id,, contextId, , , , , , , revoked, status, , ignoredStatusAuthor) = releaseRegistry
+        (id, contextId, , , , , , , , , revoked, status, , ignoredStatusAuthor) = releaseRegistry
             .getReleaseById(releaseId);
         ignoredStatusAuthor;
 
@@ -176,7 +177,7 @@ contract CodeQuillAttestationRegistry {
         // get release context to enforce membership + delegation
         bytes32 contextId;
         address ignoredStatusAuthor;
-        (,, contextId, , , , , , , , , , ignoredStatusAuthor) = releaseRegistry.getReleaseById(
+        (, contextId, , , , , , , , , , , , ignoredStatusAuthor) = releaseRegistry.getReleaseById(
             releaseId
         );
         ignoredStatusAuthor;
