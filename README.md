@@ -1,6 +1,9 @@
 # CodeQuill Contracts
 
-[![codecov](https://codecov.io/gh/codequill-claim/contracts/graph/badge.svg?token=3TKH7BRNU2)](https://codecov.io/gh/codequill-claim/contracts)
+[![codecov](https://codecov.io/github/ophelios-studio/codequill-contracts/graph/badge.svg?token=3TKH7BRNU2)](https://codecov.io/github/ophelios-studio/codequill-contracts)
+[![CodeQuill Trust Index](https://app.codequill.xyz/badges/trust/d71a1a34-ba48-4c3c-b957-cdef2822912e)](https://app.codequill.xyz/explore/codequill-claim/contracts)
+[![CodeQuill – Verified authorship](https://app.codequill.xyz/badges/claim/d71a1a34-ba48-4c3c-b957-cdef2822912e)](https://app.codequill.xyz/explore/codequill-claim/contracts)
+[![CodeQuill – Latest snapshot](https://app.codequill.xyz/badges/snapshot/d71a1a34-ba48-4c3c-b957-cdef2822912e)](https://app.codequill.xyz/explore/codequill-claim/contracts)
 
 CodeQuill is a decentralized registry for repositories, snapshots, and supply-chain attestations. It leverages EIP-712 delegations to enable a secure relayer-mediated workflow, allowing repository owners to authorize specific actions (claiming repos, creating snapshots, or signing attestations) without requiring them to be online for every transaction.
 
