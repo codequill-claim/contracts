@@ -1,6 +1,6 @@
 # CodeQuill Contracts
 
-[![codecov](https://codecov.io/github/ophelios-studio/codequill-contracts/graph/badge.svg?token=3TKH7BRNU2)](https://codecov.io/github/ophelios-studio/codequill-contracts)
+[![codecov](https://codecov.io/gh/codequill-claim/contracts/graph/badge.svg?token=3TKH7BRNU2)](https://codecov.io/gh/codequill-claim/contracts)
 [![CodeQuill Trust Index](https://app.codequill.xyz/badges/trust/d71a1a34-ba48-4c3c-b957-cdef2822912e)](https://app.codequill.xyz/explore/codequill-claim/contracts)
 [![CodeQuill – Verified authorship](https://app.codequill.xyz/badges/claim/d71a1a34-ba48-4c3c-b957-cdef2822912e)](https://app.codequill.xyz/explore/codequill-claim/contracts)
 [![CodeQuill – Latest snapshot](https://app.codequill.xyz/badges/snapshot/d71a1a34-ba48-4c3c-b957-cdef2822912e)](https://app.codequill.xyz/explore/codequill-claim/contracts)
