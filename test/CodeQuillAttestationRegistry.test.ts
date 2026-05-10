@@ -13,6 +13,7 @@ describe("CodeQuillAttestationRegistry", function () {
   let ethers: any;
   let time: any;
   let workspace: any;
+  let workspaceNft: any;
   let repository: any;
   let snapshotRegistry: any;
   let releaseRegistry: any;
@@ -33,6 +34,7 @@ describe("CodeQuillAttestationRegistry", function () {
     ethers = env.ethers;
     time = env.time;
     workspace = env.workspace;
+    workspaceNft = env.workspaceNft;
     repository = env.repository;
     snapshotRegistry = env.snapshot;
     releaseRegistry = env.release;
@@ -51,7 +53,7 @@ describe("CodeQuillAttestationRegistry", function () {
     );
 
     workspaceDomain = await getWorkspaceEip712Domain(ethers, workspace);
-    await workspace.connect(other).initAuthority(contextId, other.address);
+    await workspaceNft.connect(other).mint(contextId, other.address);
 
     const now = asBigInt(await time.latest());
     const membershipDeadline = now + 3600n;

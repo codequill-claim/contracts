@@ -4,6 +4,8 @@ export function asBigInt(v: any): bigint {
   return typeof v === "bigint" ? v : BigInt(v);
 }
 
+const WORKSPACE_NFT_BASE_URI = "https://app.codequill.xyz/api/v1/workspace-nft/";
+
 export async function setupCodeQuill() {
   const connection = await hre.network.connect();
   const ethers = (connection as any).ethers;
@@ -11,8 +13,14 @@ export async function setupCodeQuill() {
 
   const [deployer, alice, bob, charlie, daoExecutor] = await ethers.getSigners();
 
+  // Workspace authority is now backed by an ERC-721 NFT. Deploy the NFT
+  // first, then pass it into the WorkspaceRegistry constructor.
+  const WorkspaceNFT = await ethers.getContractFactory("CodeQuillWorkspaceNFT");
+  const workspaceNft = await WorkspaceNFT.deploy(WORKSPACE_NFT_BASE_URI);
+  await workspaceNft.waitForDeployment();
+
   const Workspace = await ethers.getContractFactory("CodeQuillWorkspaceRegistry");
-  const workspace = await Workspace.deploy();
+  const workspace = await Workspace.deploy(await workspaceNft.getAddress());
   await workspace.waitForDeployment();
 
   const Delegation = await ethers.getContractFactory("CodeQuillDelegation");
@@ -68,6 +76,7 @@ export async function setupCodeQuill() {
     bob,
     charlie,
     daoExecutor,
+    workspaceNft,
     workspace,
     delegation,
     repository,
@@ -114,15 +123,6 @@ export const revokeDelegationTypes = {
   ],
 };
 
-export const workspaceSetAuthorityTypes = {
-  SetAuthority: [
-    { name: "contextId", type: "bytes32" },
-    { name: "authority", type: "address" },
-    { name: "nonce", type: "uint256" },
-    { name: "deadline", type: "uint256" },
-  ],
-};
-
 export const workspaceSetMemberTypes = {
   SetMember: [
     { name: "contextId", type: "bytes32" },
@@ -137,9 +137,25 @@ export async function getWorkspaceEip712Domain(ethers: any, workspace: any) {
   return getEip712Domain(
     ethers,
     "CodeQuillWorkspaceRegistry",
-    "1",
+    "2",
     await workspace.getAddress(),
   );
+}
+
+/**
+ * Mint a workspace NFT to `to` and return the transaction. The pre-NFT
+ * `initAuthority` flow has been replaced by this — the NFT holder IS the
+ * authority. Anyone may relay the mint (we use the deployer in tests for
+ * deterministic ordering).
+ */
+export async function mintWorkspace(params: {
+  workspaceNft: any;
+  relayerSigner: any;
+  contextId: string;
+  to: string;
+}) {
+  const { workspaceNft, relayerSigner, contextId, to } = params;
+  return workspaceNft.connect(relayerSigner).mint(contextId, to);
 }
 
 export async function setWorkspaceMemberWithSig(params: {
@@ -154,7 +170,6 @@ export async function setWorkspaceMemberWithSig(params: {
   deadline: bigint;
 }) {
   const {
-    ethers,
     workspace,
     authoritySigner,
     relayerSigner,
@@ -174,51 +189,13 @@ export async function setWorkspaceMemberWithSig(params: {
     deadline,
   };
 
-  const signature = await authoritySigner.signTypedData(domain, workspaceSetMemberTypes, value);
-  const { v, r, s } = ethers.Signature.from(signature);
-
-  return workspace
-    .connect(relayerSigner)
-    .setMemberWithSig(contextId, member, memberStatus, deadline, v, r, s);
-}
-
-export async function setWorkspaceAuthorityWithSig(params: {
-  ethers: any;
-  workspace: any;
-  currentAuthoritySigner: any;
-  relayerSigner: any;
-  domain: any;
-  contextId: string;
-  newAuthority: string;
-  deadline: bigint;
-}) {
-  const {
-    ethers,
-    workspace,
-    currentAuthoritySigner,
-    relayerSigner,
+  const signature = await authoritySigner.signTypedData(
     domain,
-    contextId,
-    newAuthority,
-    deadline,
-  } = params;
-
-  const nonce = await workspace.nonces(currentAuthoritySigner.address);
-  const value = {
-    contextId,
-    authority: newAuthority,
-    nonce,
-    deadline,
-  };
-
-  const signature = await currentAuthoritySigner.signTypedData(
-    domain,
-    workspaceSetAuthorityTypes,
+    workspaceSetMemberTypes,
     value,
   );
-  const { v, r, s } = ethers.Signature.from(signature);
 
   return workspace
     .connect(relayerSigner)
-    .setAuthorityWithSig(contextId, newAuthority, deadline, v, r, s);
+    .setMemberWithSig(contextId, member, memberStatus, deadline, signature);
 }

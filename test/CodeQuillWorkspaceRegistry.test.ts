@@ -3,15 +3,15 @@ import {
   asBigInt,
   getWorkspaceEip712Domain,
   setupCodeQuill,
-  setWorkspaceAuthorityWithSig,
   setWorkspaceMemberWithSig,
-  workspaceSetAuthorityTypes,
+  workspaceSetMemberTypes,
 } from "./utils";
 
-describe("CodeQuillWorkspaceRegistry", function () {
+describe("CodeQuillWorkspaceRegistry (V2 / NFT-backed)", function () {
   let ethers: any;
   let time: any;
   let workspace: any;
+  let workspaceNft: any;
   let deployer: any;
   let authority: any;
   let member: any;
@@ -29,154 +29,96 @@ describe("CodeQuillWorkspaceRegistry", function () {
     member = env.bob;
     relayer = env.charlie;
     workspace = env.workspace;
+    workspaceNft = env.workspaceNft;
 
     domain = await getWorkspaceEip712Domain(ethers, workspace);
   });
 
-  describe("initAuthority", function () {
-    it("sets initial authority (one-time) and makes it a member", async function () {
-      await expect(workspace.connect(deployer).initAuthority(contextId, authority.address))
-        .to.emit(workspace, "AuthoritySet")
-        .withArgs(contextId, authority.address);
+  describe("authorityOf", function () {
+    it("returns address(0) when the workspace NFT has not been minted", async function () {
+      expect(await workspace.authorityOf(contextId)).to.equal(ethers.ZeroAddress);
+    });
 
+    it("returns address(0) for the zero contextId", async function () {
+      expect(await workspace.authorityOf(ethers.ZeroHash)).to.equal(ethers.ZeroAddress);
+    });
+
+    it("returns the NFT holder once minted", async function () {
+      await workspaceNft.connect(deployer).mint(contextId, authority.address);
       expect(await workspace.authorityOf(contextId)).to.equal(authority.address);
-      expect(await workspace.isMember(contextId, authority.address)).to.equal(true);
     });
 
-    it("emits both AuthoritySet and MemberSet", async function () {
-      const tx = await workspace.connect(deployer).initAuthority(contextId, authority.address);
+    it("follows the NFT after a transfer", async function () {
+      await workspaceNft.connect(deployer).mint(contextId, authority.address);
+      const tokenId = await workspaceNft.tokenIdOf(contextId);
 
-      await expect(tx)
-        .to.emit(workspace, "AuthoritySet")
-        .withArgs(contextId, authority.address);
-      await expect(tx)
-        .to.emit(workspace, "MemberSet")
-        .withArgs(contextId, authority.address, true);
-    });
+      await workspaceNft
+        .connect(authority)
+        ["safeTransferFrom(address,address,uint256)"](
+          authority.address,
+          member.address,
+          tokenId,
+        );
 
-    it("allows anyone to initialize a workspace", async function () {
-      await expect(
-        workspace.connect(authority).initAuthority(contextId, authority.address),
-      )
-        .to.emit(workspace, "AuthoritySet")
-        .withArgs(contextId, authority.address);
-    });
-
-    it("reverts on zero context / zero authority", async function () {
-      await expect(
-        workspace.connect(deployer).initAuthority(ethers.ZeroHash, authority.address),
-      ).to.be.revertedWith("zero context");
-
-      await expect(
-        workspace.connect(deployer).initAuthority(contextId, ethers.ZeroAddress),
-      ).to.be.revertedWith("zero authority");
-    });
-
-    it("reverts if authority already set", async function () {
-      await workspace.connect(deployer).initAuthority(contextId, authority.address);
-      await expect(
-        workspace.connect(deployer).initAuthority(contextId, authority.address),
-      ).to.be.revertedWith("authority already set");
+      expect(await workspace.authorityOf(contextId)).to.equal(member.address);
     });
   });
 
-  describe("setAuthorityWithSig", function () {
+  describe("isMember", function () {
     beforeEach(async function () {
-      await workspace.connect(deployer).initAuthority(contextId, authority.address);
+      await workspaceNft.connect(deployer).mint(contextId, authority.address);
     });
 
-    it("allows a relayer to submit a valid authority-change signature", async function () {
+    it("returns false for zero context or zero address", async function () {
+      expect(await workspace.isMember(ethers.ZeroHash, authority.address)).to.equal(false);
+      expect(await workspace.isMember(contextId, ethers.ZeroAddress)).to.equal(false);
+    });
+
+    it("treats the NFT holder as a member implicitly", async function () {
+      expect(await workspace.isMember(contextId, authority.address)).to.equal(true);
+    });
+
+    it("treats explicit members as members", async function () {
       const now = asBigInt(await time.latest());
       const deadline = now + 3600n;
-      const nonceBefore = await workspace.nonces(authority.address);
 
-      const tx = await setWorkspaceAuthorityWithSig({
+      await setWorkspaceMemberWithSig({
         ethers,
         workspace,
-        currentAuthoritySigner: authority,
+        authoritySigner: authority,
         relayerSigner: relayer,
         domain,
         contextId,
-        newAuthority: member.address,
+        member: member.address,
+        memberStatus: true,
         deadline,
       });
 
-      await expect(tx)
-        .to.emit(workspace, "AuthoritySet")
-        .withArgs(contextId, member.address);
-      await expect(tx)
-        .to.emit(workspace, "MemberSet")
-        .withArgs(contextId, member.address, true);
-
-      expect(await workspace.authorityOf(contextId)).to.equal(member.address);
-      expect(await workspace.isMember(contextId, authority.address)).to.equal(true);
       expect(await workspace.isMember(contextId, member.address)).to.equal(true);
-      expect(await workspace.nonces(authority.address)).to.equal(nonceBefore + 1n);
     });
 
-    it("reverts on expired signature", async function () {
-      const now = asBigInt(await time.latest());
-      const deadline = now - 1n;
-
-      await expect(
-        setWorkspaceAuthorityWithSig({
-          ethers,
-          workspace,
-          currentAuthoritySigner: authority,
-          relayerSigner: relayer,
-          domain,
-          contextId,
-          newAuthority: member.address,
-          deadline,
-        }),
-      ).to.be.revertedWith("sig expired");
+    it("returns false for non-members", async function () {
+      expect(await workspace.isMember(contextId, member.address)).to.equal(false);
     });
 
-    it("reverts on bad signer", async function () {
-      const now = asBigInt(await time.latest());
-      const deadline = now + 3600n;
+    it("automatically promotes the new NFT holder to a member after transfer", async function () {
+      const tokenId = await workspaceNft.tokenIdOf(contextId);
 
-      await expect(
-        setWorkspaceAuthorityWithSig({
-          ethers,
-          workspace,
-          currentAuthoritySigner: member,
-          relayerSigner: relayer,
-          domain,
-          contextId,
-          newAuthority: member.address,
-          deadline,
-        }),
-      ).to.be.revertedWith("bad signer");
-    });
+      await workspaceNft
+        .connect(authority)
+        ["safeTransferFrom(address,address,uint256)"](
+          authority.address,
+          member.address,
+          tokenId,
+        );
 
-    it("prevents signature replay (nonce-based)", async function () {
-      const now = asBigInt(await time.latest());
-      const deadline = now + 3600n;
-      const nonce = await workspace.nonces(authority.address);
-
-      const value = {
-        contextId,
-        authority: member.address,
-        nonce,
-        deadline,
-      };
-      const signature = await authority.signTypedData(domain, workspaceSetAuthorityTypes, value);
-      const { v, r, s } = ethers.Signature.from(signature);
-
-      await workspace
-        .connect(relayer)
-        .setAuthorityWithSig(contextId, member.address, deadline, v, r, s);
-
-      await expect(
-        workspace.connect(relayer).setAuthorityWithSig(contextId, member.address, deadline, v, r, s),
-      ).to.be.revertedWith("bad signer");
+      expect(await workspace.isMember(contextId, member.address)).to.equal(true);
     });
   });
 
   describe("setMemberWithSig", function () {
     beforeEach(async function () {
-      await workspace.connect(deployer).initAuthority(contextId, authority.address);
+      await workspaceNft.connect(deployer).mint(contextId, authority.address);
     });
 
     it("adds and removes a member via authority signature", async function () {
@@ -257,6 +199,26 @@ describe("CodeQuillWorkspaceRegistry", function () {
       ).to.be.revertedWith("zero member");
     });
 
+    it("reverts when the workspace NFT is not minted yet", async function () {
+      const now = asBigInt(await time.latest());
+      const deadline = now + 3600n;
+      const unminted = "0x9999999999999999999999999999999999999999999999999999999999999999";
+
+      await expect(
+        setWorkspaceMemberWithSig({
+          ethers,
+          workspace,
+          authoritySigner: authority,
+          relayerSigner: relayer,
+          domain,
+          contextId: unminted,
+          member: member.address,
+          memberStatus: true,
+          deadline,
+        }),
+      ).to.be.revertedWith("authority not set");
+    });
+
     it("reverts on expired signature", async function () {
       const now = asBigInt(await time.latest());
       const deadline = now - 1n;
@@ -295,7 +257,7 @@ describe("CodeQuillWorkspaceRegistry", function () {
       ).to.be.revertedWith("bad signer");
     });
 
-    it("prevents removing the authority as a member", async function () {
+    it("prevents removing the authority as a member (no-op revert)", async function () {
       const now = asBigInt(await time.latest());
       const deadline = now + 3600n;
       const nonceBefore = await workspace.nonces(authority.address);
@@ -318,6 +280,27 @@ describe("CodeQuillWorkspaceRegistry", function () {
       expect(await workspace.isMember(contextId, authority.address)).to.equal(true);
     });
 
+    it("treats `setMember(authority, true)` as a no-op (does not consume a nonce)", async function () {
+      const now = asBigInt(await time.latest());
+      const deadline = now + 3600n;
+      const nonceBefore = await workspace.nonces(authority.address);
+
+      await setWorkspaceMemberWithSig({
+        ethers,
+        workspace,
+        authoritySigner: authority,
+        relayerSigner: relayer,
+        domain,
+        contextId,
+        member: authority.address,
+        memberStatus: true,
+        deadline,
+      });
+
+      expect(await workspace.nonces(authority.address)).to.equal(nonceBefore);
+      expect(await workspace.isMember(contextId, authority.address)).to.equal(true);
+    });
+
     it("prevents signature replay (nonce-based)", async function () {
       const now = asBigInt(await time.latest());
       const deadline = now + 3600n;
@@ -331,31 +314,21 @@ describe("CodeQuillWorkspaceRegistry", function () {
         deadline,
       };
 
-      // Use helper once, then replay exact same signature.
-      const signature = await authority.signTypedData(domain, {
-        SetMember: [
-          { name: "contextId", type: "bytes32" },
-          { name: "member", type: "address" },
-          { name: "isMember", type: "bool" },
-          { name: "nonce", type: "uint256" },
-          { name: "deadline", type: "uint256" },
-        ],
-      }, value);
-      const { v, r, s } = ethers.Signature.from(signature);
+      const signature = await authority.signTypedData(domain, workspaceSetMemberTypes, value);
 
       await workspace
         .connect(relayer)
-        .setMemberWithSig(contextId, member.address, true, deadline, v, r, s);
+        .setMemberWithSig(contextId, member.address, true, deadline, signature);
 
       await expect(
-        workspace.connect(relayer).setMemberWithSig(contextId, member.address, true, deadline, v, r, s),
+        workspace.connect(relayer).setMemberWithSig(contextId, member.address, true, deadline, signature),
       ).to.be.revertedWith("bad signer");
     });
   });
 
   describe("leave", function () {
     beforeEach(async function () {
-      await workspace.connect(deployer).initAuthority(contextId, authority.address);
+      await workspaceNft.connect(deployer).mint(contextId, authority.address);
     });
 
     it("allows a member to self-leave", async function () {

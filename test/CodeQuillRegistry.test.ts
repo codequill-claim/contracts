@@ -12,6 +12,7 @@ describe("CodeQuillRepositoryRegistry", function () {
   let ethers: any;
   let time: any;
   let workspace: any;
+  let workspaceNft: any;
   let delegation: any;
   let repository: any;
   let deployer: any;
@@ -33,6 +34,7 @@ describe("CodeQuillRepositoryRegistry", function () {
     relayer = env.bob;
     other = env.charlie;
     workspace = env.workspace;
+    workspaceNft = env.workspaceNft;
     delegation = env.delegation;
     repository = env.repository;
 
@@ -45,9 +47,10 @@ describe("CodeQuillRepositoryRegistry", function () {
 
     workspaceDomain = await getWorkspaceEip712Domain(ethers, workspace);
 
-    // Bootstrap contexts and add required members via authority signature.
-    await workspace.connect(deployer).initAuthority(contextId, deployer.address);
-    await workspace.connect(deployer).initAuthority(otherContextId, deployer.address);
+    // Bootstrap contexts by minting the workspace NFT (the NFT holder is the
+    // authority and is implicitly a member of the workspace).
+    await workspaceNft.connect(deployer).mint(contextId, deployer.address);
+    await workspaceNft.connect(deployer).mint(otherContextId, deployer.address);
 
     const now = asBigInt(await time.latest());
     const deadline = now + 3600n;

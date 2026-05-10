@@ -13,6 +13,7 @@ describe("CodeQuillSnapshotRegistry", function () {
   let ethers: any;
   let time: any;
   let workspace: any;
+  let workspaceNft: any;
   let repository: any;
   let delegation: any;
   let snapshotRegistry: any;
@@ -32,6 +33,7 @@ describe("CodeQuillSnapshotRegistry", function () {
     time = env.time;
     deployer = env.deployer;
     workspace = env.workspace;
+    workspaceNft = env.workspaceNft;
     repository = env.repository;
     delegation = env.delegation;
     snapshotRegistry = env.snapshot;
@@ -47,7 +49,7 @@ describe("CodeQuillSnapshotRegistry", function () {
     );
 
     workspaceDomain = await getWorkspaceEip712Domain(ethers, workspace);
-    await workspace.connect(deployer).initAuthority(contextId, deployer.address);
+    await workspaceNft.connect(deployer).mint(contextId, deployer.address);
 
     const now = asBigInt(await time.latest());
     const membershipDeadline = now + 3600n;

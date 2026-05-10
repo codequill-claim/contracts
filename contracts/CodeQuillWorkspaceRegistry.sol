@@ -1,136 +1,107 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.24;
 
-import {ECDSA} from "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 import {EIP712} from "@openzeppelin/contracts/utils/cryptography/EIP712.sol";
+import {SignatureChecker} from "@openzeppelin/contracts/utils/cryptography/SignatureChecker.sol";
 
-/// @title CodeQuillWorkspaceRegistry
-/// @notice On-chain registry binding wallets to a workspace contextId (bytes32),
-///         controlled by a workspace authority wallet (default wallet).
+interface ICodeQuillWorkspaceNFT {
+    function ownerOf(uint256 tokenId) external view returns (address);
+}
+
+/// @title CodeQuillWorkspaceRegistry (V2)
+/// @notice Workspace authority is sourced from the CodeQuillWorkspaceNFT
+///         contract — the holder of the workspace's token IS the authority.
+///         Authority changes by transferring the NFT (standard ERC-721
+///         `safeTransferFrom`), so this contract no longer exposes any
+///         signature-based authority rotation.
+///
+/// `setMemberWithSig` accepts arbitrary `bytes` signatures so Safes (and any
+/// other EIP-1271 contract wallet) can act as authority — verified via
+/// OpenZeppelin's `SignatureChecker` which falls back to `IERC1271` when the
+/// authority is a contract.
 contract CodeQuillWorkspaceRegistry is EIP712 {
-    using ECDSA for bytes32;
+    /// @notice The NFT contract that backs workspace authority.
+    ICodeQuillWorkspaceNFT public immutable nft;
 
-    // contextId -> authority wallet
-    mapping(bytes32 => address) public authorityOf;
+    // contextId -> wallet -> isMember (excluding the implicit "authority is a
+    // member" rule, which is evaluated dynamically against the NFT).
+    mapping(bytes32 => mapping(address => bool)) private _members;
 
-    // contextId -> wallet -> isMember
-    mapping(bytes32 => mapping(address => bool)) public isMember;
-
-    // Nonce per authority (prevents signature replay)
+    // Nonce per authority (prevents signature replay).
     mapping(address => uint256) public nonces;
 
-    // EIP-712 typehashes
-    // SetAuthority(contextId,authority,nonce,deadline)
-    bytes32 private constant SET_AUTHORITY_TYPEHASH =
-    keccak256("SetAuthority(bytes32 contextId,address authority,uint256 nonce,uint256 deadline)");
-
+    // EIP-712 typehash
     // SetMember(contextId,member,isMember,nonce,deadline)
     bytes32 private constant SET_MEMBER_TYPEHASH =
-    keccak256("SetMember(bytes32 contextId,address member,bool isMember,uint256 nonce,uint256 deadline)");
+        keccak256("SetMember(bytes32 contextId,address member,bool isMember,uint256 nonce,uint256 deadline)");
 
-    event AuthoritySet(bytes32 indexed contextId, address indexed authority);
     event MemberSet(bytes32 indexed contextId, address indexed member, bool isMember);
 
-    constructor()
-    EIP712("CodeQuillWorkspaceRegistry", "1")
-    {}
-
-    // --------------------
-    // Bootstrap / Authority management
-    // --------------------
-
-    /**
-     * @notice Initialize the authority for a contextId (one-time).
-     * @dev Use this when you create the workspace off-chain and want to anchor its default wallet on-chain.
-     *
-     * If you prefer *only* signature-based authority setting, you can delete this and use setAuthorityWithSig only.
-     */
-    function initAuthority(bytes32 contextId, address authority) external {
-        require(contextId != bytes32(0), "zero context");
-        require(authority != address(0), "zero authority");
-        require(authorityOf[contextId] == address(0), "authority already set");
-
-        authorityOf[contextId] = authority;
-
-        // Make the authority a member automatically
-        isMember[contextId][authority] = true;
-
-        emit AuthoritySet(contextId, authority);
-        emit MemberSet(contextId, authority, true);
+    constructor(address nftAddr)
+        EIP712("CodeQuillWorkspaceRegistry", "2")
+    {
+        require(nftAddr != address(0), "zero nft");
+        nft = ICodeQuillWorkspaceNFT(nftAddr);
     }
 
-    /**
-     * @notice Change authority using an EIP-712 signature by the *current* authority.
-     * @dev Backend can pay gas; cannot cheat without authority signature.
-     */
-    function setAuthorityWithSig(
-        bytes32 contextId,
-        address newAuthority,
-        uint256 deadline,
-        uint8 v,
-        bytes32 r,
-        bytes32 s
-    ) external {
-        require(contextId != bytes32(0), "zero context");
-        require(newAuthority != address(0), "zero authority");
-        require(block.timestamp <= deadline, "sig expired");
+    // --------------------
+    // Authority (NFT-backed)
+    // --------------------
 
-        address currentAuthority = authorityOf[contextId];
-        require(currentAuthority != address(0), "authority not set");
+    /// @notice Returns the current workspace authority — i.e. the holder of
+    ///         the workspace's NFT — or `address(0)` if no NFT has been
+    ///         minted for `contextId`.
+    function authorityOf(bytes32 contextId) public view returns (address) {
+        if (contextId == bytes32(0)) return address(0);
+        try nft.ownerOf(uint256(contextId)) returns (address owner_) {
+            return owner_;
+        } catch {
+            return address(0);
+        }
+    }
 
-        uint256 nonce = nonces[currentAuthority];
-
-        bytes32 structHash = keccak256(
-            abi.encode(
-                SET_AUTHORITY_TYPEHASH,
-                contextId,
-                newAuthority,
-                nonce,
-                deadline
-            )
-        );
-
-        bytes32 digest = _hashTypedDataV4(structHash);
-        address signer = ECDSA.recover(digest, v, r, s);
-        require(signer == currentAuthority, "bad signer");
-
-        nonces[currentAuthority] = nonce + 1;
-
-        authorityOf[contextId] = newAuthority;
-
-        // Ensure new authority is a member
-        isMember[contextId][newAuthority] = true;
-
-        emit AuthoritySet(contextId, newAuthority);
-        emit MemberSet(contextId, newAuthority, true);
+    /// @notice True iff `wallet` is a member of the workspace identified by
+    ///         `contextId`. The authority (NFT holder) is implicitly always a
+    ///         member; explicit members are tracked in storage.
+    function isMember(bytes32 contextId, address wallet) external view returns (bool) {
+        if (contextId == bytes32(0) || wallet == address(0)) {
+            return false;
+        }
+        if (authorityOf(contextId) == wallet) {
+            return true;
+        }
+        return _members[contextId][wallet];
     }
 
     // --------------------
     // Membership management
     // --------------------
 
-    /**
-     * @notice Add/remove a member using an EIP-712 signature by the workspace authority.
-     * @dev Backend can pay gas; cannot cheat without authority signature.
-     */
+    /// @notice Add or remove a member for `contextId`, authorized by an EIP-712
+    ///         signature from the workspace authority. Backend can pay gas.
+    ///         The signature blob is opaque to allow EIP-1271 (Safe) signing.
     function setMemberWithSig(
         bytes32 contextId,
         address member,
         bool memberStatus,
         uint256 deadline,
-        uint8 v,
-        bytes32 r,
-        bytes32 s
+        bytes calldata signature
     ) external {
         require(contextId != bytes32(0), "zero context");
         require(member != address(0), "zero member");
         require(block.timestamp <= deadline, "sig expired");
 
-        address auth = authorityOf[contextId];
-        require(auth != address(0), "authority not set");
+        address authority = authorityOf(contextId);
+        require(authority != address(0), "authority not set");
 
-        uint256 nonce = nonces[auth];
+        // Authority is implicitly a member and cannot be demoted via this path.
+        if (member == authority) {
+            require(memberStatus, "cannot remove authority");
+            // No-op for setting the authority as a member; they already are.
+            return;
+        }
 
+        uint256 nonce = nonces[authority];
         bytes32 structHash = keccak256(
             abi.encode(
                 SET_MEMBER_TYPEHASH,
@@ -143,32 +114,25 @@ contract CodeQuillWorkspaceRegistry is EIP712 {
         );
 
         bytes32 digest = _hashTypedDataV4(structHash);
-        address signer = ECDSA.recover(digest, v, r, s);
-        require(signer == auth, "bad signer");
+        require(
+            SignatureChecker.isValidSignatureNow(authority, digest, signature),
+            "bad signer"
+        );
 
-        nonces[auth] = nonce + 1;
+        nonces[authority] = nonce + 1;
 
-        // Prevent removing the authority as a member
-        if (member == auth) {
-            require(memberStatus == true, "cannot remove authority");
-        }
-
-        isMember[contextId][member] = memberStatus;
+        _members[contextId][member] = memberStatus;
         emit MemberSet(contextId, member, memberStatus);
     }
 
-    /**
-     * @notice Optional self-leave (no signature).
-     * @dev Keeps UX simple for users who want to remove themselves.
-     * If you want authority-only membership changes, remove this function.
-     */
+    /// @notice Self-leave: a member can remove themselves without a signature.
+    ///         The authority (NFT holder) cannot leave — they must transfer
+    ///         the NFT to a new owner first.
     function leave(bytes32 contextId) external {
         require(contextId != bytes32(0), "zero context");
+        require(msg.sender != authorityOf(contextId), "authority cannot leave");
 
-        address auth = authorityOf[contextId];
-        require(msg.sender != auth, "authority cannot leave");
-
-        isMember[contextId][msg.sender] = false;
+        _members[contextId][msg.sender] = false;
         emit MemberSet(contextId, msg.sender, false);
     }
 }
