@@ -137,9 +137,7 @@ describe("CodeQuillAttestationRegistry", function () {
       scopes,
       expiry,
       deadline,
-      v,
-      r,
-      s,
+      signature,
     );
   }
 

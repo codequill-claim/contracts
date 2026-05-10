@@ -105,9 +105,7 @@ describe("CodeQuillReleaseRegistry", function () {
       scope,
       expiry,
       deadline,
-      v,
-      r,
-      s,
+      signature,
     );
   }
 

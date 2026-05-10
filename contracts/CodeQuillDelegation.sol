@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.24;
 
-import {ECDSA} from "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 import {EIP712} from "@openzeppelin/contracts/utils/cryptography/EIP712.sol";
+import {SignatureChecker} from "@openzeppelin/contracts/utils/cryptography/SignatureChecker.sol";
 
 /**
  * @title CodeQuillDelegation
@@ -16,10 +16,12 @@ import {EIP712} from "@openzeppelin/contracts/utils/cryptography/EIP712.sol";
  *  - delegation exists for (owner, relayer, contextId) if expiry != 0 and >= now
  *  - and (storedScopes & requiredScope) != 0
  *  - SCOPE_ALL authorizes any scope
+ *
+ * Signature verification uses OpenZeppelin's SignatureChecker so that owners
+ * can be EOAs (65-byte ECDSA) or contract wallets implementing EIP-1271
+ * (Safes, smart-contract account abstraction wallets, etc.).
  */
 contract CodeQuillDelegation is EIP712 {
-    using ECDSA for bytes32;
-
     // ---- Scopes (bitmask) ----
     uint256 public constant SCOPE_CLAIM = 1 << 0;
     uint256 public constant SCOPE_SNAPSHOT = 1 << 1;
@@ -102,8 +104,10 @@ contract CodeQuillDelegation is EIP712 {
     /**
      * @notice Register or update a delegation using an EIP-712 signature from `owner_`.
      *
-     * @dev Signature is over:
-     *  Delegate(owner, relayer, contextId, scopes, nonce, expiry, deadline)
+     * @dev Signature is verified via SignatureChecker so EOA (65-byte ECDSA)
+     *  and EIP-1271 (Safe / contract wallet) signatures are both accepted.
+     *  Signature is over:
+     *   Delegate(owner, relayer, contextId, scopes, nonce, expiry, deadline)
      */
     function registerDelegationWithSig(
         address owner_,
@@ -112,9 +116,7 @@ contract CodeQuillDelegation is EIP712 {
         uint256 scopes,
         uint256 expiry,   // unix seconds
         uint256 deadline, // unix seconds
-        uint8 v,
-        bytes32 r,
-        bytes32 s
+        bytes calldata signature
     ) external {
         require(block.timestamp <= deadline, "sig expired");
         require(expiry > block.timestamp, "bad expiry");
@@ -138,8 +140,10 @@ contract CodeQuillDelegation is EIP712 {
         );
 
         bytes32 digest = _hashTypedDataV4(structHash);
-        address signer = ECDSA.recover(digest, v, r, s);
-        require(signer == owner_, "bad signer");
+        require(
+            SignatureChecker.isValidSignatureNow(owner_, digest, signature),
+            "bad signer"
+        );
 
         nonces[owner_] = nonce + 1;
 
@@ -167,17 +171,16 @@ contract CodeQuillDelegation is EIP712 {
     /**
      * @notice Revoke delegation using an EIP-712 signature from `owner_`.
      *
-     * @dev Signature is over:
-     *  Revoke(owner, relayer, contextId, nonce, deadline)
+     * @dev Signature is verified via SignatureChecker so EOA and EIP-1271
+     *  (Safe) signatures are both accepted. Signature is over:
+     *   Revoke(owner, relayer, contextId, nonce, deadline)
      */
     function revokeWithSig(
         address owner_,
         address relayer_,
         bytes32 contextId,
         uint256 deadline,
-        uint8 v,
-        bytes32 r,
-        bytes32 s
+        bytes calldata signature
     ) external {
         require(block.timestamp <= deadline, "sig expired");
         require(owner_ != address(0), "zero owner");
@@ -198,8 +201,10 @@ contract CodeQuillDelegation is EIP712 {
         );
 
         bytes32 digest = _hashTypedDataV4(structHash);
-        address signer = ECDSA.recover(digest, v, r, s);
-        require(signer == owner_, "bad signer");
+        require(
+            SignatureChecker.isValidSignatureNow(owner_, digest, signature),
+            "bad signer"
+        );
 
         nonces[owner_] = nonce + 1;
 

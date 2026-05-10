@@ -135,9 +135,7 @@ describe("CodeQuillSnapshotRegistry", function () {
         scopes,
         expiry,
         deadline,
-        v,
-        r,
-        s,
+        signature,
       );
 
       await expect(

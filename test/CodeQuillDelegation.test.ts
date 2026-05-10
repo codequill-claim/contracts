@@ -69,9 +69,7 @@ describe("CodeQuillDelegation", function () {
           scopes,
           expiry,
           deadline,
-          v,
-          r,
-          s,
+          signature,
         ),
       )
         .to.emit(delegation, "Delegated")
@@ -125,9 +123,7 @@ describe("CodeQuillDelegation", function () {
           scopes,
           expiry,
           deadline,
-          v,
-          r,
-          s,
+          signature,
         ),
       ).to.be.revertedWith("bad signer");
     });
@@ -161,9 +157,7 @@ describe("CodeQuillDelegation", function () {
           scopes,
           expiry,
           deadline,
-          v,
-          r,
-          s,
+          signature,
         ),
       ).to.be.revertedWith("sig expired");
     });
@@ -197,9 +191,7 @@ describe("CodeQuillDelegation", function () {
           scopes,
           expiry,
           deadline,
-          v,
-          r,
-          s,
+          signature,
         ),
       ).to.be.revertedWith("bad expiry");
     });
@@ -233,9 +225,7 @@ describe("CodeQuillDelegation", function () {
           scopes,
           expiry,
           deadline,
-          v,
-          r,
-          s,
+          signature,
         ),
       ).to.be.revertedWith("zero context");
     });
@@ -269,11 +259,129 @@ describe("CodeQuillDelegation", function () {
           scopes,
           expiry,
           deadline,
-          v,
-          r,
-          s,
+          signature,
         ),
       ).to.be.revertedWith("zero relayer");
+    });
+  });
+
+  describe("EIP-1271 / contract-wallet owners", function () {
+    it("accepts a contract-wallet owner via SignatureChecker for register and revoke", async function () {
+      // A Safe-style contract wallet whose internal signer is `owner` (alice).
+      // The wallet's address is the delegating "owner" on-chain; alice signs
+      // the EIP-712 digest with her EOA key and the wallet validates via
+      // IERC1271.isValidSignature.
+      const Wallet = await ethers.getContractFactory("MockEIP1271Signer");
+      const wallet = await Wallet.deploy(owner.address);
+      await wallet.waitForDeployment();
+      const walletAddr = await wallet.getAddress();
+
+      const contextId = ethers.encodeBytes32String(contextIdLabel);
+      const now = asBigInt(await time.latest());
+      const expiry = now + 3600n;
+      const deadline = now + 7200n;
+      const scopes = await delegation.SCOPE_CLAIM();
+      const nonce = await delegation.nonces(walletAddr);
+
+      const value = {
+        owner: walletAddr,
+        relayer: relayer.address,
+        contextId,
+        scopes,
+        nonce,
+        expiry,
+        deadline,
+      };
+
+      const signature = await owner.signTypedData(domain, delegationTypes, value);
+
+      await expect(
+        delegation.registerDelegationWithSig(
+          walletAddr,
+          relayer.address,
+          contextId,
+          scopes,
+          expiry,
+          deadline,
+          signature,
+        ),
+      )
+        .to.emit(delegation, "Delegated")
+        .withArgs(walletAddr, relayer.address, contextId, scopes, expiry);
+
+      expect(
+        await delegation.isAuthorized(
+          walletAddr,
+          relayer.address,
+          await delegation.SCOPE_CLAIM(),
+          contextId,
+        ),
+      ).to.equal(true);
+
+      // Revoke with a contract-wallet signature.
+      const revokeNonce = await delegation.nonces(walletAddr);
+      const revokeDeadline = now + 9000n;
+      const revokeValue = {
+        owner: walletAddr,
+        relayer: relayer.address,
+        contextId,
+        nonce: revokeNonce,
+        deadline: revokeDeadline,
+      };
+      const revokeSignature = await owner.signTypedData(
+        domain,
+        revokeDelegationTypes,
+        revokeValue,
+      );
+
+      await expect(
+        delegation.revokeWithSig(
+          walletAddr,
+          relayer.address,
+          contextId,
+          revokeDeadline,
+          revokeSignature,
+        ),
+      )
+        .to.emit(delegation, "Revoked")
+        .withArgs(walletAddr, relayer.address, contextId);
+    });
+
+    it("rejects EIP-1271 signatures from a non-owner of the contract wallet", async function () {
+      const Wallet = await ethers.getContractFactory("MockEIP1271Signer");
+      const wallet = await Wallet.deploy(owner.address);
+      await wallet.waitForDeployment();
+      const walletAddr = await wallet.getAddress();
+
+      const contextId = ethers.encodeBytes32String(contextIdLabel);
+      const now = asBigInt(await time.latest());
+      const expiry = now + 3600n;
+      const deadline = now + 7200n;
+      const scopes = await delegation.SCOPE_CLAIM();
+      const nonce = await delegation.nonces(walletAddr);
+
+      // `other` (charlie) signs but the wallet's owner is `owner` (alice).
+      const bogus = await other.signTypedData(domain, delegationTypes, {
+        owner: walletAddr,
+        relayer: relayer.address,
+        contextId,
+        scopes,
+        nonce,
+        expiry,
+        deadline,
+      });
+
+      await expect(
+        delegation.registerDelegationWithSig(
+          walletAddr,
+          relayer.address,
+          contextId,
+          scopes,
+          expiry,
+          deadline,
+          bogus,
+        ),
+      ).to.be.revertedWith("bad signer");
     });
   });
 
@@ -317,9 +425,7 @@ describe("CodeQuillDelegation", function () {
         scopes,
         expiry,
         deadline,
-        v,
-        r,
-        s,
+        signature,
       );
 
       expect(
@@ -371,9 +477,7 @@ describe("CodeQuillDelegation", function () {
         scopes,
         expiry,
         deadline,
-        v,
-        r,
-        s,
+        signature,
       );
 
       expect(
@@ -425,9 +529,7 @@ describe("CodeQuillDelegation", function () {
         scopes,
         expiry,
         deadline,
-        v,
-        r,
-        s,
+        signature,
       );
 
       expect(
@@ -491,9 +593,7 @@ describe("CodeQuillDelegation", function () {
         scopes,
         expiry,
         deadline,
-        v,
-        r,
-        s,
+        signature,
       );
 
       const revokeNonce = await delegation.nonces(owner.address);
@@ -516,7 +616,7 @@ describe("CodeQuillDelegation", function () {
       await expect(
         delegation
           .connect(deployer)
-          .revokeWithSig(owner.address, relayer.address, contextId, revokeDeadline, vR, rR, sR),
+          .revokeWithSig(owner.address, relayer.address, contextId, revokeDeadline, revokeSig),
       )
         .to.emit(delegation, "Revoked")
         .withArgs(owner.address, relayer.address, contextId);
@@ -558,9 +658,7 @@ describe("CodeQuillDelegation", function () {
           relayer.address,
           contextId,
           deadline,
-          v,
-          r,
-          s,
+          signature,
         ),
       ).to.be.revertedWith("bad signer");
     });
@@ -592,9 +690,7 @@ describe("CodeQuillDelegation", function () {
           relayer.address,
           contextId,
           deadline,
-          v,
-          r,
-          s,
+          signature,
         ),
       ).to.be.revertedWith("sig expired");
     });

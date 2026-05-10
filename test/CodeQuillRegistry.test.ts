@@ -144,9 +144,7 @@ describe("CodeQuillRepositoryRegistry", function () {
         scopes,
         expiry,
         deadline,
-        v,
-        r,
-        s,
+        signature,
       );
 
       await expect(
@@ -243,9 +241,7 @@ describe("CodeQuillRepositoryRegistry", function () {
         scopes,
         expiry,
         deadline2,
-        v,
-        r,
-        s,
+        signature,
       );
 
       await expect(
