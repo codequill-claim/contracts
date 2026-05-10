@@ -35,5 +35,19 @@ export default defineConfig({
       url: configVariable("SEPOLIA_RPC"),
       accounts: [configVariable("DEPLOYER_PK")],
     },
+    "base-sepolia": {
+      type: "http",
+      chainType: "l1",
+      chainId: 84532,
+      url: configVariable("BASE_SEPOLIA_RPC"),
+      accounts: [configVariable("DEPLOYER_PK")],
+    },
+    base: {
+      type: "http",
+      chainType: "l1",
+      chainId: 8453,
+      url: configVariable("BASE_RPC"),
+      accounts: [configVariable("DEPLOYER_PK")],
+    },
   },
 });
