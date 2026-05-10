@@ -37,6 +37,8 @@ See [docs/CodeQuillWorkspaceNFT.md](docs/CodeQuillWorkspaceNFT.md) and [docs/Cod
 For more detailed information on the project's structure and security model, please refer to:
 - [Architecture Diagram](docs/ARCHITECTURE.md)
 - [Permissions Matrix](docs/PERMISSIONS.md)
+- [Security Model](docs/SECURITY.md) — threat model, trust assumptions, known limitations
+- [Audit Findings](docs/AUDIT_FINDINGS.md) — self-audit findings, severity-rated, with status
 
 ## Compile contracts
 ```
