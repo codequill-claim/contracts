@@ -330,6 +330,76 @@ describe("CodeQuillReleaseRegistry", function () {
   });
 
   describe("revoke + supersede", function () {
+    it("allows any workspace member to revoke (workspace-scoped, not pinned to original author)", async function () {
+      const repoId = ethers.encodeBytes32String("repo-revoker");
+      const root = ethers.id("root-revoker");
+
+      await repository
+        .connect(repoOwner1)
+        .claimRepo(repoId, contextId, "meta", repoOwner1.address);
+      await snapshotRegistry
+        .connect(repoOwner1)
+        .createSnapshot(repoId, contextId, ethers.id("c"), root, "cid", repoOwner1.address);
+
+      const releaseId = ethers.id("release-revoker");
+      await releaseRegistry
+        .connect(author)
+        .anchorRelease(
+          releaseId,
+          contextId,
+          "cid",
+          "v1",
+          author.address,
+          governance.address,
+          repoId,
+          root,
+        );
+
+      // `governance` (bob) is a workspace member but is NOT the release's author.
+      // Under the v2 workspace-membership model they can revoke.
+      await expect(
+        releaseRegistry.connect(governance).revokeRelease(releaseId, governance.address),
+      )
+        .to.emit(releaseRegistry, "ReleaseRevoked")
+        .withArgs(releaseId, governance.address, anyValue);
+
+      const r = await releaseRegistry.getReleaseById(releaseId);
+      expect(r.revoked).to.equal(true);
+      // Provenance: original author is unchanged.
+      expect(r.author).to.equal(author.address);
+    });
+
+    it("reverts when revoke caller is not a workspace member", async function () {
+      const repoId = ethers.encodeBytes32String("repo-nonmember");
+      const root = ethers.id("root-nonmember");
+
+      await repository
+        .connect(repoOwner1)
+        .claimRepo(repoId, contextId, "meta", repoOwner1.address);
+      await snapshotRegistry
+        .connect(repoOwner1)
+        .createSnapshot(repoId, contextId, ethers.id("c"), root, "cid", repoOwner1.address);
+
+      const releaseId = ethers.id("release-nonmember");
+      await releaseRegistry
+        .connect(author)
+        .anchorRelease(
+          releaseId,
+          contextId,
+          "cid",
+          "v1",
+          author.address,
+          governance.address,
+          repoId,
+          root,
+        );
+
+      // daoExecutor is not added as a workspace member in this suite's setup.
+      await expect(
+        releaseRegistry.connect(daoExecutor).revokeRelease(releaseId, daoExecutor.address),
+      ).to.be.revertedWith("author not member");
+    });
+
     it("revokes and supersedes releases (author or delegated relayer)", async function () {
       const { repo1Id, root1, root2 } = await (async () => {
         const repo1Id = ethers.encodeBytes32String("repo-sr");

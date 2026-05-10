@@ -13,6 +13,9 @@ Every preservation anchored in the registry must be linked to a valid `snapshotM
 ### No Plaintext Storage
 The registry only stores hashes and optional IPFS CIDs (locators). It **never** stores the actual content of the preservation or any encryption keys. The actual preservation file is intended to be stored off-chain (e.g., in a private IPFS cluster or cloud storage).
 
+### Workspace-Scoped Authorization (v2)
+Mirrors `CodeQuillSnapshotRegistry`: any current member of the repo's workspace `contextId` may anchor a preservation (directly or via `SCOPE_PRESERVATION` delegation). The repo's claim wallet (`repoOwner` in `CodeQuillRepositoryRegistry`) is not consulted for authorization.
+
 ---
 
 ## Data Structures
@@ -27,7 +30,7 @@ Each record in the registry contains:
 | `metadataSha256` | `bytes32` | (Optional) SHA-256 hash of a separate preservation metadata JSON. |
 | `preservationCid` | `string` | (Optional) IPFS CID or locator for the encrypted preservation file. |
 | `timestamp` | `uint256` | Block timestamp when the preservation was anchored. |
-| `author` | `address` | The wallet address of the repository owner. |
+| `author` | `address` | The workspace member who anchored the preservation. Recorded as immutable provenance. |
 
 ### 2. Preservations Mapping
 `mapping(bytes32 => mapping(bytes32 => Preservation)) private preservationsOf`
@@ -38,8 +41,10 @@ Each record in the registry contains:
 
 ## Key Operations
 
-*   **`anchorPreservation`**: Allows a repository owner (or their delegated signer with `SCOPE_PRESERVATION`) to record a new preservation record.
+*   **`anchorPreservation`**: Allows any workspace member (or their delegated signer with `SCOPE_PRESERVATION`) to record a new preservation record.
+    *   **Rule**: The repo must be claimed and `repoContextId` must equal the passed `contextId`.
     *   **Rule**: The associated snapshot must already be recorded in the `SnapshotRegistry`.
-    *   **Rule**: The author must be the current repository owner and a member of the workspace context.
+    *   **Rule**: `author` must be a current member of the workspace `contextId`. Recorded as immutable provenance.
+    *   **Rule**: `msg.sender` must be `author` OR have an active `SCOPE_PRESERVATION` delegation from `author` for `contextId`.
 *   **`hasPreservation`**: A view function to check if a preservation has been anchored for a specific snapshot.
 *   **`getPreservation`**: Retrieves the full details of a recorded preservation.

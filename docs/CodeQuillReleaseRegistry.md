@@ -10,6 +10,15 @@ The registry is designed to support many independent workspaces (identified by a
 ### Release Lifecycle
 A release starts as `PENDING`. It can then be `ACCEPTED` or `REJECTED` by an authorized governance authority or a DAO executor. Once anchored, a release can be `revoked` (marked invalid) or `superseded` (replaced by a newer version), creating a verifiable audit trail.
 
+### Authorization Model (v2)
+- **Anchor** (`anchorRelease`): `author` and `governanceAuthority` must both be current workspace members. `msg.sender` must be `author` or their `SCOPE_RELEASE` delegate.
+- **Revoke** (`revokeRelease`): **Any current workspace member** of the release's `contextId` (or their `SCOPE_RELEASE` delegate) may revoke. The check is `workspace.isMember(r.contextId, author)` — not `r.author == author`. The release's recorded `author` is immutable provenance.
+- **Supersede** (`supersedeRelease`): Same workspace-membership rule as revoke.
+- **Accept / Reject** (governance): Pinned to the release's designated `governanceAuthority` (or their `SCOPE_RELEASE` delegate, or the workspace's configured `daoExecutor`). This pinning is intentional — governance is a separation-of-duties role that the release author chose at anchor time. If the `governanceAuthority` wallet is compromised, accept/reject for that specific release becomes blocked (a known sharp edge; mitigations live at the workspace policy level).
+
+### Why this matters for compromise recovery
+Because revoke/supersede are workspace-scoped, a workspace can clean up its own published history even if individual author wallets are lost — anyone else in the workspace can revoke a release and supersede it with a fresh one. Rotating the workspace NFT therefore rotates the *practical* ability to manage releases, even though historical `author` and `governanceAuthority` fields stay frozen.
+
 ---
 
 ## Data Structures
@@ -26,8 +35,8 @@ Every release anchored in the registry is stored as a `Release` object.
 | `manifestCid` | `string` | IPFS CID for the release manifest (metadata, changelog, etc.). |
 | `name` | `string` | Version string (e.g., `v1.0.4`). |
 | `timestamp` | `uint256` | Block timestamp when the release was anchored. |
-| `author` | `address` | The workspace member who created the release record. |
-| `governanceAuthority` | `address` | Wallet designated to manually approve/reject the release. |
+| `author` | `address` | The workspace member who created the release record. Immutable provenance. |
+| `governanceAuthority` | `address` | Wallet designated to manually approve/reject the release. Pinned at anchor time. |
 | `supersededBy` | `bytes32` | ID of the release that replaced this one. |
 | `revoked` | `bool` | Whether this release has been withdrawn or invalidated. |
 | `status` | `Enum` | `PENDING` (0), `ACCEPTED` (1), or `REJECTED` (2). |

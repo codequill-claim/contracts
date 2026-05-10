@@ -29,6 +29,10 @@ interface ICodeQuillSnapshotRegistry {
 /// @title CodeQuillPreservationRegistry
 /// @notice Optional registry for anchoring existence of encrypted preservations bound to a published snapshot.
 /// @dev This anchors metadata only (hashes + optional CID). It does NOT store plaintext and does NOT prove build causality.
+///      Authorization mirrors CodeQuillSnapshotRegistry: any current member of
+///      the repo's workspace contextId may anchor a preservation. The repo's
+///      claim wallet (`repoOwner`) is provenance + transfer authority — not
+///      a gate on ongoing preservation work.
 contract CodeQuillPreservationRegistry {
     ICodeQuillRepositoryRegistry public immutable registry;
     ICodeQuillWorkspaceRegistry public immutable workspace;
@@ -77,13 +81,14 @@ contract CodeQuillPreservationRegistry {
 
     /// @notice Anchor a preservation record for a snapshot root.
     /// @dev Works for:
-    ///  - direct repo owner call (msg.sender == repoOwner), and
-    ///  - relayed call where repo owner delegated SCOPE_PRESERVATION to msg.sender within contextId.
+    ///  - direct author call (msg.sender == author), and
+    ///  - relayed call where `author` delegated SCOPE_PRESERVATION to msg.sender within contextId.
     ///
     /// Principles enforced:
     /// - repo must belong to contextId
-    /// - repo owner must be a member of contextId
-    /// - author must be repo owner (provenance)
+    /// - author must be a current member of contextId (workspace-scoped, not
+    ///   pinned to the repo's claim wallet)
+    /// - author is recorded as immutable provenance
     function anchorPreservation(
         bytes32 repoId,
         bytes32 contextId,
@@ -96,21 +101,21 @@ contract CodeQuillPreservationRegistry {
         require(contextId != bytes32(0), "zero context");
         require(snapshotMerkleRoot != bytes32(0), "zero snapshot root");
         require(archiveSha256 != bytes32(0), "zero archive sha");
+        require(author != address(0), "zero author");
 
-        address owner_ = registry.repoOwner(repoId);
-        require(owner_ != address(0), "repo not claimed");
-
+        // Repo must exist (claimed) and belong to this workspace context.
         bytes32 repoCtx = registry.repoContextId(repoId);
+        require(repoCtx != bytes32(0), "repo not claimed");
         require(repoCtx == contextId, "repo wrong context");
 
-        require(workspace.isMember(contextId, owner_), "owner not member");
+        // Membership enforcement: author must be a current member of the
+        // workspace context. The repo's original claim wallet is not used
+        // for authorization.
+        require(workspace.isMember(contextId, author), "author not member");
 
-        // provenance: author is repo owner
-        require(author == owner_, "author must be repo owner");
-
-        // Authorization: owner calls directly OR owner delegated caller for this context
-        if (msg.sender != owner_) {
-            bool isDelegated = delegation.isAuthorized(owner_, msg.sender, delegation.SCOPE_PRESERVATION(), contextId);
+        // Authorization: author calls directly OR has delegated caller for this context
+        if (msg.sender != author) {
+            bool isDelegated = delegation.isAuthorized(author, msg.sender, delegation.SCOPE_PRESERVATION(), contextId);
             require(isDelegated, "not authorized");
         }
 

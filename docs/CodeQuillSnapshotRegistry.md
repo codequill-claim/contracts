@@ -5,7 +5,7 @@ The `CodeQuillSnapshotRegistry` is used to record immutable "snapshots" of a rep
 ## Core Concepts
 
 ### Source Provenance
-A snapshot represents the state of a repository at a specific point in time (e.g., a specific Git commit). By recording this on-chain, CodeQuill provides cryptographic proof that a specific version of the code existed and was owned by a specific workspace member.
+A snapshot represents the state of a repository at a specific point in time (e.g., a specific Git commit). By recording this on-chain, CodeQuill provides cryptographic proof that a specific version of the code existed and was published by a specific workspace member.
 
 ### Verifiable Content
 Snapshots rely on two key pieces of data:
@@ -14,6 +14,9 @@ Snapshots rely on two key pieces of data:
 
 ### Context Alignment
 A snapshot can only be created for a repository within the same workspace (**Context**) where the repository was claimed. This ensures that organizational boundaries are respected.
+
+### Workspace-Scoped Authorization (v2)
+**Authorization is workspace-scoped, not pinned to the repo's claim wallet.** Any current member of the repo's workspace `contextId` may author a snapshot — directly or via a relayer they have delegated `SCOPE_SNAPSHOT` to. The wallet that originally claimed the repository (`repoOwner` in `CodeQuillRepositoryRegistry`) is provenance and the wallet authorized to call `transferRepo`; it does NOT gate ongoing snapshot work. This means rotating workspace authority (transferring the workspace NFT) immediately gives the new owner the right to snapshot every repo in the workspace, without per-repo `transferRepo` calls.
 
 ---
 
@@ -28,7 +31,7 @@ Each snapshot records the following data:
 | `merkleRoot` | `bytes32` | The root hash of the file Merkle tree. Used for verification. |
 | `manifestCid` | `string` | IPFS CID for the JSON manifest containing the file list. |
 | `timestamp` | `uint256` | Block timestamp when the snapshot was recorded. |
-| `author` | `address` | The wallet address of the repository owner who created the snapshot. |
+| `author` | `address` | The workspace member who created the snapshot. Recorded as immutable provenance. |
 
 ### 2. Snapshots Mapping
 `mapping(bytes32 => Snapshot[]) private snapshotsOf`
@@ -42,8 +45,9 @@ Each snapshot records the following data:
 
 ## Key Operations
 
-*   **`createSnapshot`**: Allows a repository owner (or their delegated signer with `SCOPE_SNAPSHOT`) to record a new state for their repository.
-    *   **Rule**: The repository must be claimed in the `RepositoryRegistry`.
-    *   **Rule**: The repository's owner must be a member of the workspace context.
+*   **`createSnapshot`**: Allows any workspace member (or their delegated signer with `SCOPE_SNAPSHOT`) to record a new state for a repository in their workspace.
+    *   **Rule**: The repository must be claimed in the `RepositoryRegistry` and its `repoContextId` must match the passed `contextId`.
+    *   **Rule**: `author` must be a current member of the workspace `contextId`. Recorded as immutable provenance.
+    *   **Rule**: `msg.sender` must be `author` OR have an active `SCOPE_SNAPSHOT` delegation from `author` for `contextId`.
 *   **`getSnapshotsCount`**: Returns the total number of snapshots recorded for a specific repository.
 *   **`getSnapshot` / `getSnapshotByRoot`**: View functions to retrieve the full details of a snapshot using either its index in the history or its unique Merkle root.

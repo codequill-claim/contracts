@@ -227,6 +227,71 @@ describe("CodeQuillSnapshotRegistry", function () {
           ),
       ).to.be.revertedWith("repo wrong context");
     });
+
+    it("allows any workspace member (not just the repo claimant) to author a snapshot", async function () {
+      // Add `other` (charlie) as an explicit workspace member. They did NOT
+      // claim this repo, but in the v2 model they should still be authorised
+      // to snapshot it because authorisation is workspace-scoped.
+      const now = asBigInt(await time.latest());
+      const membershipDeadline = now + 3600n;
+      await setWorkspaceMemberWithSig({
+        ethers,
+        workspace,
+        authoritySigner: deployer,
+        relayerSigner: deployer,
+        domain: workspaceDomain,
+        contextId,
+        member: other.address,
+        memberStatus: true,
+        deadline: membershipDeadline,
+      });
+
+      const repoId = ethers.encodeBytes32String(repoIdLabel);
+      const commitHash = ethers.id("commit-other");
+      const merkleRoot = ethers.id("root-other");
+
+      await expect(
+        snapshotRegistry
+          .connect(other)
+          .createSnapshot(
+            repoId,
+            contextId,
+            commitHash,
+            merkleRoot,
+            "cid-other",
+            other.address,
+          ),
+      )
+        .to.emit(snapshotRegistry, "SnapshotCreated")
+        .withArgs(
+          repoId,
+          0,
+          contextId,
+          other.address,
+          commitHash,
+          merkleRoot,
+          "cid-other",
+          anyValue,
+        );
+    });
+
+    it("reverts when author is not a workspace member", async function () {
+      const repoId = ethers.encodeBytes32String(repoIdLabel);
+      // `other` is not a workspace member; using them as `author` (even if
+      // they call directly) must fail at the membership check.
+      await expect(
+        snapshotRegistry
+          .connect(other)
+          .createSnapshot(
+            repoId,
+            contextId,
+            ethers.id("commit"),
+            ethers.id("root"),
+            "cid",
+            other.address,
+          ),
+      ).to.be.revertedWith("author not member");
+    });
   });
 
   describe("views", function () {

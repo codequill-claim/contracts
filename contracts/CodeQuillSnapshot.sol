@@ -22,7 +22,13 @@ interface ICodeQuillDelegation {
 }
 
 /// @title CodeQuillSnapshotRegistry - lightweight snapshot via merkle roots + off-chain manifest
-/// @notice Snapshot creation is allowed for repo owner OR relayer delegated by repo owner within a contextId (workspace).
+/// @notice Snapshot creation is allowed for any current member of the repo's
+///         workspace context, OR a relayer that member has delegated.
+///         The repo's claim wallet (`repoOwner`) is not required to be the
+///         snapshot author — repo claim is provenance, workspace membership
+///         is authorization. This means rotating workspace authority via NFT
+///         transfer immediately gives the new owner the right to snapshot,
+///         without needing to transfer every claimed repo too.
 contract CodeQuillSnapshotRegistry {
     ICodeQuillRepositoryRegistry public immutable registry;
     ICodeQuillWorkspaceRegistry public immutable workspace;
@@ -66,10 +72,13 @@ contract CodeQuillSnapshotRegistry {
 
     /// @notice Create a snapshot
     /// @dev Works for:
-    ///  - direct repo owner call (msg.sender == repoOwner), and
-    ///  - relayed call where repo owner delegated SCOPE_SNAPSHOT to msg.sender within contextId.
+    ///  - direct author call (msg.sender == author), and
+    ///  - relayed call where `author` delegated SCOPE_SNAPSHOT to msg.sender within contextId.
     ///
-    /// @param author Logical author wallet to record on-chain. Must be the repo owner.
+    /// @param author Logical author wallet to record on-chain. Must be a
+    ///        *current* member of the repo's workspace contextId — not
+    ///        necessarily the wallet that claimed the repo. Recorded as
+    ///        immutable provenance.
     function createSnapshot(
         bytes32 repoId,
         bytes32 contextId,
@@ -80,25 +89,24 @@ contract CodeQuillSnapshotRegistry {
     ) external {
         require(contextId != bytes32(0), "zero context");
         require(merkleRoot != bytes32(0), "zero root");
+        require(author != address(0), "zero author");
         require(bytes(manifestCid).length > 0, "empty CID");
         require(snapshotIndexByRoot[repoId][merkleRoot] == 0, "duplicate root");
 
-        address owner_ = registry.repoOwner(repoId);
-        require(owner_ != address(0), "repo not claimed");
-
-        // Repo must belong to this workspace context
+        // Repo must exist (claimed) and belong to this workspace context.
         bytes32 repoCtx = registry.repoContextId(repoId);
+        require(repoCtx != bytes32(0), "repo not claimed");
         require(repoCtx == contextId, "repo wrong context");
 
-        // Snapshot provenance: author must be repo owner
-        require(author == owner_, "author must be repo owner");
+        // Membership enforcement: author must be a current member of the
+        // workspace context. The repo's original claim wallet is not used
+        // for authorization — it stays in `RepositoryRegistry.repoOwner` as
+        // provenance + the wallet allowed to `transferRepo`.
+        require(workspace.isMember(contextId, author), "author not member");
 
-        // Membership enforcement: repo owner must be a member of the workspace context
-        require(workspace.isMember(contextId, owner_), "owner not member");
-
-        // Authorization: owner calls directly OR owner delegated caller for this context
-        if (msg.sender != owner_) {
-            bool isDelegated = delegation.isAuthorized(owner_, msg.sender, delegation.SCOPE_SNAPSHOT(), contextId);
+        // Authorization: author calls directly OR has delegated caller for this context
+        if (msg.sender != author) {
+            bool isDelegated = delegation.isAuthorized(author, msg.sender, delegation.SCOPE_SNAPSHOT(), contextId);
             require(isDelegated, "not authorized");
         }
 

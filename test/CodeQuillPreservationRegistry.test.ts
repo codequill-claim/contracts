@@ -268,6 +268,71 @@ describe("CodeQuillPreservationRegistry", function () {
           ),
       ).to.be.revertedWith("repo not claimed");
     });
+
+    it("allows any workspace member (not just the repo claimant) to anchor a preservation", async function () {
+      // Add `other` (charlie) as an explicit workspace member. They did NOT
+      // claim this repo, but in the v2 model they should still be authorised
+      // to preserve it because authorisation is workspace-scoped.
+      const now = asBigInt(await time.latest());
+      const membershipDeadline = now + 3600n;
+      await setWorkspaceMemberWithSig({
+        ethers,
+        workspace,
+        authoritySigner: deployer,
+        relayerSigner: deployer,
+        domain: workspaceDomain,
+        contextId,
+        member: other.address,
+        memberStatus: true,
+        deadline: membershipDeadline,
+      });
+
+      const repoId = ethers.encodeBytes32String(repoIdLabel);
+      const merkleRoot = ethers.id("root");
+      const archiveSha256 = ethers.id("archive-other");
+
+      await expect(
+        preservationRegistry
+          .connect(other)
+          .anchorPreservation(
+            repoId,
+            contextId,
+            merkleRoot,
+            archiveSha256,
+            ethers.ZeroHash,
+            "cid-other",
+            other.address,
+          ),
+      )
+        .to.emit(preservationRegistry, "PreservationAnchored")
+        .withArgs(
+          repoId,
+          merkleRoot,
+          archiveSha256,
+          contextId,
+          other.address,
+          ethers.ZeroHash,
+          "cid-other",
+          anyValue,
+        );
+    });
+
+    it("reverts when author is not a workspace member", async function () {
+      const repoId = ethers.encodeBytes32String(repoIdLabel);
+      await expect(
+        preservationRegistry
+          .connect(other)
+          .anchorPreservation(
+            repoId,
+            contextId,
+            ethers.id("root"),
+            ethers.id("archive"),
+            ethers.ZeroHash,
+            "",
+            other.address,
+          ),
+      ).to.be.revertedWith("author not member");
+    });
   });
 
   describe("views", function () {

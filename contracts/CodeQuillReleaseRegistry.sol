@@ -249,10 +249,18 @@ contract CodeQuillReleaseRegistry {
     }
 
     /// @notice Revoke a release.
+    /// @dev Authorization is workspace-scoped, not pinned to the original
+    ///      release author. Any current member of the release's contextId
+    ///      may revoke (directly or via SCOPE_RELEASE delegation). The
+    ///      release's recorded `author` field is unchanged — it remains
+    ///      immutable provenance.
+    /// @param author The acting wallet (workspace member of r.contextId). Must
+    ///        be a current member, but does NOT need to match r.author.
     function revokeRelease(bytes32 releaseId, address author) external {
         Release storage r = releaseById[releaseId];
         require(r.timestamp != 0, "release not found");
-        require(r.author == author, "mismatched author");
+        require(author != address(0), "zero author");
+        require(workspace.isMember(r.contextId, author), "author not member");
 
         uint256 scope = delegation.SCOPE_RELEASE();
         if (msg.sender != author) {
@@ -265,6 +273,11 @@ contract CodeQuillReleaseRegistry {
     }
 
     /// @notice Supersede a revoked release with a new one.
+    /// @dev Authorization is workspace-scoped: any current member of the
+    ///      revoked release's contextId may supersede it (directly or via
+    ///      SCOPE_RELEASE delegation). The release's recorded `author` field
+    ///      is unchanged.
+    /// @param author The acting wallet (workspace member of oldR.contextId).
     function supersedeRelease(bytes32 oldReleaseId, bytes32 newReleaseId, address author) external {
         Release storage oldR = releaseById[oldReleaseId];
         require(oldR.timestamp != 0, "old release not found");
@@ -274,7 +287,8 @@ contract CodeQuillReleaseRegistry {
 
         require(oldR.revoked, "old release must be revoked");
         require(oldR.supersededBy == bytes32(0), "already superseded");
-        require(oldR.author == author, "mismatched author");
+        require(author != address(0), "zero author");
+        require(workspace.isMember(oldR.contextId, author), "author not member");
 
         uint256 scope = delegation.SCOPE_RELEASE();
         if (msg.sender != author) {
