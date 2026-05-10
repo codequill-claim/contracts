@@ -298,27 +298,39 @@ describe("CodeQuillReleaseRegistry", function () {
         .withArgs(releaseId, 1, relayer.address, anyValue);
     });
 
-    it("allows daoExecutor when set by a workspace member", async function () {
+    it("allows the workspace authority to set daoExecutor and have them finalize releases", async function () {
       const { releaseId } = await anchorOneRelease();
-      await releaseRegistry.connect(author).setDaoExecutor(contextId, author.address, daoExecutor.address);
+      // `deployer` holds the workspace NFT (set up in beforeEach via mint).
+      await releaseRegistry.connect(deployer).setDaoExecutor(contextId, deployer.address, daoExecutor.address);
 
       await expect(releaseRegistry.connect(daoExecutor).reject(releaseId))
         .to.emit(releaseRegistry, "GouvernanceStatusChanged")
         .withArgs(releaseId, 2, daoExecutor.address, anyValue);
     });
 
-    it("allows delegated relayer to set daoExecutor", async function () {
-      await delegate(await delegation.SCOPE_RELEASE(), author, relayer);
-      await expect(releaseRegistry.connect(relayer).setDaoExecutor(contextId, author.address, daoExecutor.address))
+    it("allows a relayer delegated by the workspace authority to set daoExecutor", async function () {
+      await delegate(await delegation.SCOPE_RELEASE(), deployer, relayer);
+      await expect(releaseRegistry.connect(relayer).setDaoExecutor(contextId, deployer.address, daoExecutor.address))
         .to.emit(releaseRegistry, "DaoExecutorSet")
         .withArgs(contextId, daoExecutor.address);
     });
 
-    it("reverts when setting daoExecutor by non-member", async function () {
+    it("reverts when setDaoExecutor is called by a workspace member who is NOT the authority", async function () {
+      // `author` (alice) is an explicit workspace member but not the NFT
+      // holder. Under the v2 fix, only the workspace authority can configure
+      // the DAO executor — preventing any rogue member from hijacking
+      // governance for the entire workspace.
+      await expect(
+        releaseRegistry.connect(author).setDaoExecutor(contextId, author.address, daoExecutor.address),
+      ).to.be.revertedWith("only workspace authority");
+    });
+
+    it("reverts when setDaoExecutor is called by a non-member entirely", async function () {
       const signers = await ethers.getSigners();
       const nonMember = signers[5];
-      await expect(releaseRegistry.connect(nonMember).setDaoExecutor(contextId, nonMember.address, daoExecutor.address))
-        .to.be.revertedWith("author not member");
+      await expect(
+        releaseRegistry.connect(nonMember).setDaoExecutor(contextId, nonMember.address, daoExecutor.address),
+      ).to.be.revertedWith("only workspace authority");
     });
 
     it("reverts for non-governance callers", async function () {

@@ -8,6 +8,7 @@ interface ICodeQuillRepositoryRegistry {
 
 interface ICodeQuillWorkspaceRegistry {
     function isMember(bytes32 contextId, address wallet) external view returns (bool);
+    function authorityOf(bytes32 contextId) external view returns (address);
 }
 
 interface ICodeQuillDelegation {
@@ -118,12 +119,18 @@ contract CodeQuillReleaseRegistry {
     }
 
     /// @notice Set the Aragon DAO executor for a context.
+    /// @dev Restricted to the workspace authority (NFT holder). The DAO
+    ///      executor can accept/reject any release in the workspace, so this
+    ///      is a privileged role that bypasses per-release `governanceAuthority`.
+    ///      Only the workspace authority — i.e. the wallet that holds the
+    ///      workspace NFT — may configure it. A rogue member without authority
+    ///      cannot use this function to hijack governance.
     function setDaoExecutor(
         bytes32 contextId,
         address author,
         address daoExecutor_
     ) external onlySelfOrDelegated(author, delegation.SCOPE_RELEASE(), contextId) {
-        require(workspace.isMember(contextId, author), "author not member");
+        require(workspace.authorityOf(contextId) == author, "only workspace authority");
         daoExecutors[contextId] = daoExecutor_;
         emit DaoExecutorSet(contextId, daoExecutor_);
     }
