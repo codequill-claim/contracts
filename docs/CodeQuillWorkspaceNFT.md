@@ -62,7 +62,7 @@ What it DOES block: marketplace listings (OpenSea, Blur, etc.), approved-operato
 function tokenURI(uint256 tokenId) public view override returns (string memory)
 ```
 
-Returns `{baseURI}{Strings.toHexString(tokenId, 32)}.json` for any minted token; reverts with `ERC721NonexistentToken` otherwise. The result is a fully-qualified URL like `https://app.codequill.xyz/api/v1/workspace-nft/0x111…111.json` and is consumed by the metadata endpoint on the CodeQuill backend.
+Returns `{baseURI}{Strings.toHexString(tokenId, 32)}.json` for any minted token; reverts with `ERC721NonexistentToken` otherwise. The result is a fully-qualified URL like `https://api.codequill.xyz/v1/workspace-nft/0x111…111.json` and is consumed by the metadata endpoint on the CodeQuill API backend (note: API mode, not the web app — the controller lives in `Controllers/Api/External/` with `#[Root("/v1")]`).
 
 ---
 

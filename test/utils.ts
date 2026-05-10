@@ -4,7 +4,7 @@ export function asBigInt(v: any): bigint {
   return typeof v === "bigint" ? v : BigInt(v);
 }
 
-const WORKSPACE_NFT_BASE_URI = "https://app.codequill.xyz/api/v1/workspace-nft/";
+const WORKSPACE_NFT_BASE_URI = "https://api.codequill.xyz/v1/workspace-nft/";
 
 export async function setupCodeQuill() {
   const connection = await hre.network.connect();

@@ -40,7 +40,7 @@ describe("CodeQuillWorkspaceNFT", function () {
     it("returns the configured base URI for tokenURI", async function () {
       await workspaceNft.connect(deployer).mint(contextId, alice.address);
       const tokenId = await workspaceNft.tokenIdOf(contextId);
-      const expected = `https://app.codequill.xyz/api/v1/workspace-nft/${contextId}.json`;
+      const expected = `https://api.codequill.xyz/v1/workspace-nft/${contextId}.json`;
       expect(await workspaceNft.tokenURI(tokenId)).to.equal(expected);
     });
 
