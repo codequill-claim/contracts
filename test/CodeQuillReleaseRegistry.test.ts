@@ -482,6 +482,45 @@ describe("CodeQuillReleaseRegistry", function () {
         .to.emit(releaseRegistry, "ReleaseRevoked")
         .withArgs(release2Id, author.address, anyValue);
     });
+
+    it("rejects supersede across different repos", async function () {
+      // Anchor two releases for two different repos in the same workspace.
+      const { repo1Id, repo2Id, root1, root2 } = await setupTwoReposAndSnapshots();
+      const releaseAId = ethers.id("super-a");
+      const releaseBId = ethers.id("super-b");
+
+      await releaseRegistry
+        .connect(author)
+        .anchorRelease(
+          releaseAId,
+          contextId,
+          "cid",
+          "vA",
+          author.address,
+          governance.address,
+          repo1Id,
+          root1,
+        );
+      await releaseRegistry
+        .connect(author)
+        .anchorRelease(
+          releaseBId,
+          contextId,
+          "cid",
+          "vB",
+          author.address,
+          governance.address,
+          repo2Id,
+          root2,
+        );
+
+      await releaseRegistry.connect(author).revokeRelease(releaseAId, author.address);
+
+      // Releases are in the same context but different repos — supersede must reject.
+      await expect(
+        releaseRegistry.connect(author).supersedeRelease(releaseAId, releaseBId, author.address),
+      ).to.be.revertedWith("repo mismatch");
+    });
   });
 
   describe("views", function () {

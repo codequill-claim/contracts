@@ -294,6 +294,11 @@ contract CodeQuillReleaseRegistry {
 
         require(oldR.revoked, "old release must be revoked");
         require(oldR.supersededBy == bytes32(0), "already superseded");
+        // Defensive integrity: prevent superseding a release with one for an
+        // unrelated repo. Both releases must belong to the same repo and the
+        // same workspace context.
+        require(newR.repoId == oldR.repoId, "repo mismatch");
+        require(newR.contextId == oldR.contextId, "context mismatch");
         require(author != address(0), "zero author");
         require(workspace.isMember(oldR.contextId, author), "author not member");
 
