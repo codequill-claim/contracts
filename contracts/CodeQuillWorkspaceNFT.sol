@@ -21,12 +21,23 @@ import {Strings} from "@openzeppelin/contracts/utils/Strings.sol";
 /// claims authority, mirroring CodeQuill's "evidence layer" ethos. The
 /// expected URI is `ipfs://<cidv1-of-metadata-json>`.
 ///
+/// `contractURI()` exposes the collection-level metadata read by OpenSea
+/// and other marketplaces (logo, banner, description). It is set at
+/// construction and immutable thereafter — no admin can rename or rebrand
+/// the collection after deploy. The expected value is
+/// `ipfs://<cidv1-of-collection-json>`.
+///
 /// No admin keys, no pause, no royalties, no admin-controlled URI.
 contract CodeQuillWorkspaceNFT is ERC721 {
     using Strings for uint256;
 
     /// @notice Per-token URI. Set at mint and never mutated afterwards.
     mapping(uint256 => string) private _tokenURIs;
+
+    /// @notice Collection-level metadata URI (ERC-7572). Frozen at deploy,
+    ///         used by OpenSea, Blur, and other marketplaces to render the
+    ///         collection landing page (name, description, banner, logo).
+    string private _contractURI;
 
     /// @notice Emitted when a workspace token is minted. Includes the tokenURI
     ///         so indexers can subscribe without an extra `tokenURI(tokenId)`
@@ -50,9 +61,18 @@ contract CodeQuillWorkspaceNFT is ERC721 {
     error InvalidContextId();
     error InvalidRecipient();
     error InvalidTokenURI();
+    error InvalidContractURI();
     error ApprovalsDisabled();
 
-    constructor() ERC721("CodeQuill Workspace", "CQWS") {}
+    constructor(string memory contractURI_) ERC721("CodeQuill Workspace", "CQWS") {
+        if (bytes(contractURI_).length == 0) revert InvalidContractURI();
+        _contractURI = contractURI_;
+    }
+
+    /// @notice Marketplace-readable collection metadata URI (ERC-7572).
+    function contractURI() external view returns (string memory) {
+        return _contractURI;
+    }
 
     /// @notice Mint the workspace token for `contextId` to `to` with a frozen
     ///         `tokenURI_`. Reverts if a token for `contextId` already exists

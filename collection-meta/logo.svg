@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">
+  <defs>
+    <radialGradient id="bg-warm" cx="78%" cy="18%" r="60%">
+      <stop offset="0%"  stop-color="hsl(282, 90%, 65%)" stop-opacity="0.85"/>
+      <stop offset="100%" stop-color="hsl(282, 90%, 65%)" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="bg-cool" cx="18%" cy="88%" r="70%">
+      <stop offset="0%"  stop-color="hsl(345, 80%, 55%)" stop-opacity="0.75"/>
+      <stop offset="100%" stop-color="hsl(345, 80%, 55%)" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="bg-center" cx="50%" cy="50%" r="55%">
+      <stop offset="0%"  stop-color="hsl(312, 70%, 45%)" stop-opacity="0.55"/>
+      <stop offset="100%" stop-color="hsl(312, 70%, 45%)" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="bg-base" x1="0%" y1="0%" x2="58%" y2="100%">
+      <stop offset="0%"  stop-color="hsl(252, 45%, 18%)"/>
+      <stop offset="100%" stop-color="hsl(262, 55%, 9%)"/>
+    </linearGradient>
+    <pattern id="dots" x="0" y="0" width="14" height="14" patternUnits="userSpaceOnUse">
+      <circle cx="1" cy="1" r="1" fill="rgba(0,0,0,0.45)"/>
+    </pattern>
+
+    <linearGradient id="quill-grad" gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="900" y2="1070">
+      <stop offset="0" stop-color="#7879F6"/>
+      <stop offset="1" stop-color="#FBCBF5"/>
+    </linearGradient>
+
+    <clipPath id="tile-clip">
+      <rect x="0" y="0" width="1024" height="1024" rx="120"/>
+    </clipPath>
+  </defs>
+
+  <g clip-path="url(#tile-clip)">
+    <rect width="1024" height="1024" fill="url(#bg-base)"/>
+    <rect width="1024" height="1024" fill="url(#bg-warm)"/>
+    <rect width="1024" height="1024" fill="url(#bg-cool)"/>
+    <rect width="1024" height="1024" fill="url(#bg-center)"/>
+    <rect width="1024" height="1024" fill="url(#dots)" opacity="0.18"/>
+
+    <!-- Inner ring -->
+    <rect x="48" y="48" width="928" height="928" rx="88" fill="none"
+          stroke="rgba(255,255,255,0.08)" stroke-width="2"/>
+
+    <!-- Quill mark, centered -->
+    <g transform="translate(326,236) scale(0.42)">
+      <path fill="url(#quill-grad)"
+            d="M897.5,2.1L757.27,330.86L234.48,539.72l-27.9,11.2C30.4,439.13,2.92,361,2.5,359.73l231.68-92.54L897.5,2.1z"/>
+      <path fill="url(#quill-grad)"
+            d="M815.98,993.03l-2.26-7.78l-41.61-51.51l-30.99,9.34c-6.23,1.84-12.45,3.68-18.4,5.38c19.67,24.91,20.24,65.95,20.24,65.95c13.44-4.25,32.13,3.96,49.82,15.43c24.91,15.99,47.55,38.07,47.55,38.07L815.98,993.03z"/>
+      <path fill="url(#quill-grad)"
+            d="M752.86,909.96c-3.68-4.39-7.64-8.77-11.6-13.3c-54.2-60.57-129.78-127.09-233.65-186.53c-3.11-1.84-6.23-3.54-9.48-5.38c-7.36-4.1-14.72-8.21-22.36-12.17c-4.39-2.41-8.92-4.67-13.45-7.08l-16.13-8.07c-3.26-1.56-6.37-3.11-9.48-4.53c-5.94-2.83-11.89-5.66-17.83-8.49c-36.37-16.7-69.63-32.97-99.92-48.97c-2.83-1.42-5.52-2.83-8.35-4.25c-2.83-1.56-5.66-3.11-8.49-4.67c-4.67-2.41-9.34-4.95-13.73-7.36c-3.11-1.7-6.23-3.4-9.2-5.09c-4.81-2.69-9.48-5.38-14.15-7.93c-21.09-12.03-40.62-23.78-58.45-35.24C30.38,439.11,2.93,360.99,2.5,359.72c0,0,17.27,212.57,132.32,335.27c0,0,101.33,9.48,164.03-12.31c0,0-47.69,41.04-145.34,31.84c2.26,2.83,41.04,47.27,106.28,91.42c0,0,40.62,12.88,185.39-33.54c-4.81,2.97-83.64,51.23-157.37,50.81l116.9,74.16c0,0,86.61,7.36,192.9-36.37c-2.41,2.83-43.73,47.27-145.2,50.1h-3.4c-2.26,0-4.53,0.14-6.79,0.14c0,0,0.14,0,0.28,0.14c0.14,0,0.42,0.28,0.99,0.57c0.28,0.28,0.71,0.57,1.13,0.71c0.42,0.28,0.99,0.57,1.56,0.99c1.27,0.71,2.83,1.56,4.81,2.69c22.64,11.6,89.58,38.21,204.36,18.4c23.07-3.82,48.12-9.77,75.15-17.97L752.86,909.96z"/>
+    </g>
+
+    <!-- Wordmark -->
+    <text x="512" y="780" text-anchor="middle"
+          font-family="'Inter', -apple-system, BlinkMacSystemFont, sans-serif"
+          font-size="92" font-weight="800" fill="#ffffff" letter-spacing="-3">CodeQuill</text>
+    <text x="512" y="830" text-anchor="middle"
+          font-family="'Inter', -apple-system, BlinkMacSystemFont, sans-serif"
+          font-size="22" font-weight="500" fill="rgba(255,255,255,0.55)" letter-spacing="6">WORKSPACES</text>
+  </g>
+</svg>

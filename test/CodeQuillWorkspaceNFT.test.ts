@@ -3,6 +3,7 @@ import {
   asBigInt,
   getWorkspaceEip712Domain,
   setupCodeQuill,
+  TEST_CONTRACT_URI,
   TEST_TOKEN_URI,
   workspaceSetMemberTypes,
 } from "./utils";
@@ -36,6 +37,18 @@ describe("CodeQuillWorkspaceNFT", function () {
     it("exposes the right name and symbol", async function () {
       expect(await workspaceNft.name()).to.equal("CodeQuill Workspace");
       expect(await workspaceNft.symbol()).to.equal("CQWS");
+    });
+
+    it("exposes contractURI for marketplace collection pages", async function () {
+      expect(await workspaceNft.contractURI()).to.equal(TEST_CONTRACT_URI);
+    });
+
+    it("reverts deployment with an empty contractURI", async function () {
+      const Nft = await ethers.getContractFactory("CodeQuillWorkspaceNFT");
+      await expect(Nft.deploy("")).to.be.revertedWithCustomError(
+        Nft,
+        "InvalidContractURI",
+      );
     });
 
     it("returns the per-token URI set at mint", async function () {

@@ -1,0 +1,7 @@
+{
+  "name": "CodeQuill Workspaces",
+  "description": "Each token in this collection represents the on-chain authority for a CodeQuill workspace. The holder of the token IS the workspace — transferring the token transfers authority. Workspaces use this evidence layer to claim repositories, anchor source snapshots, attest build artifacts, and preserve encrypted archives on IPFS. Learn more at https://codequill.xyz.",
+  "image": "ipfs://{{LOGO_CID}}",
+  "external_link": "https://codequill.xyz",
+  "collaborators": []
+}

@@ -10,6 +10,10 @@ export function asBigInt(v: any): bigint {
 export const TEST_TOKEN_URI =
   "ipfs://bafkreigh2akiscaildcqabsyg3dfr6chu3fgpregiymsck7e7aqa4s52zy";
 
+/// Collection-level URI used during tests (CodeQuillWorkspaceNFT constructor).
+export const TEST_CONTRACT_URI =
+  "ipfs://bafkreiabcdefghijklmnopqrstuvwxyz0123456789abcdefghijklmno";
+
 export async function setupCodeQuill() {
   const connection = await hre.network.connect();
   const ethers = (connection as any).ethers;
@@ -21,7 +25,7 @@ export async function setupCodeQuill() {
   // first, then pass it into the WorkspaceRegistry constructor. Per-token
   // URIs are set at mint time, so the NFT itself takes no constructor args.
   const WorkspaceNFT = await ethers.getContractFactory("CodeQuillWorkspaceNFT");
-  const workspaceNft = await WorkspaceNFT.deploy();
+  const workspaceNft = await WorkspaceNFT.deploy(TEST_CONTRACT_URI);
   await workspaceNft.waitForDeployment();
 
   const Workspace = await ethers.getContractFactory("CodeQuillWorkspaceRegistry");

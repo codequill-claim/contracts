@@ -3,18 +3,32 @@ import { buildModule } from "@nomicfoundation/hardhat-ignition/modules";
 /**
  * V2 deployment graph:
  *
- *   WorkspaceNFT (no constructor args — per-token URIs set at mint)
+ *   WorkspaceNFT (contractURI baked in at construction)
  *      └─> WorkspaceRegistry (nftAddr)
  *               └─> Repository, Snapshot, Preservation, Release, Attestation, Delegation
  *
  * Token URIs are now passed in per-mint by the relayer (the backend renders
  * the workspace artwork, uploads to Lighthouse, and supplies the resulting
- * `ipfs://<metadata_cid>` to `mint`). The NFT therefore takes no constructor
- * parameters and exposes no admin-controlled URI mutation.
+ * `ipfs://<metadata_cid>` to `mint`). The NFT has no admin-controlled URI
+ * mutation surface at all — both `tokenURI` and `contractURI` are frozen
+ * at the moment they are set.
+ *
+ * Configurable parameters (override at deploy time with `--parameters`):
+ *
+ *   workspaceNftContractURI  IPFS URI for the collection-level metadata
+ *                            (logo, banner, description) read by OpenSea
+ *                            and other marketplaces. Generate with
+ *                            scripts/upload-collection-metadata.ts before
+ *                            deploying.
  */
 export default buildModule("CodeQuill", (m) => {
+    const workspaceNftContractURI = m.getParameter(
+        "workspaceNftContractURI",
+        "ipfs://bafkreigh2akiscaildcqabsyg3dfr6chu3fgpregiymsck7e7aqa4s52zy",
+    );
+
     // 1. Workspace NFT (ownership token, one per workspace).
-    const workspaceNft = m.contract("CodeQuillWorkspaceNFT", []);
+    const workspaceNft = m.contract("CodeQuillWorkspaceNFT", [workspaceNftContractURI]);
 
     // 2. Workspace registry (membership + EIP-712 signatures), backed by the NFT.
     const workspace = m.contract("CodeQuillWorkspaceRegistry", [workspaceNft]);
