@@ -34,7 +34,7 @@
       <stop offset="100%" stop-color="hsl(240, 60%, 6%)"/>
     </linearGradient>
     <pattern id="dots" x="0" y="0" width="14" height="14" patternUnits="userSpaceOnUse">
-      <circle cx="1" cy="1" r="1" fill="rgba(0,0,0,0.45)"/>
+      <circle cx="1" cy="1" r="1.2" fill="rgba(255,255,255,0.6)"/>
     </pattern>
 
     <!-- CodeQuill quill mark gradient (from the official brand SVG). -->
@@ -53,7 +53,7 @@
     <rect width="1024" height="1024" fill="url(#bg-warm)"/>
     <rect width="1024" height="1024" fill="url(#bg-cool)"/>
     <rect width="1024" height="1024" fill="url(#bg-center)"/>
-    <rect width="1024" height="1024" fill="url(#dots)" opacity="0.18" style="mix-blend-mode: multiply"/>
+    <rect width="1024" height="1024" fill="url(#dots)" opacity="0.25"/>
 
     <!-- Inner ring -->
     <rect x="48" y="48" width="928" height="928" rx="88" fill="none"
