@@ -23,6 +23,10 @@
 
 import fs from "node:fs";
 import path from "node:path";
+import { fileURLToPath } from "node:url";
+
+// `__dirname` isn't defined under ESM — derive it from `import.meta.url`.
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 const LIGHTHOUSE_UPLOAD_ENDPOINT = "https://node.lighthouse.storage/api/v0/add";
 
