@@ -1,21 +1,28 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">
   <defs>
-    <radialGradient id="bg-warm" cx="78%" cy="18%" r="60%">
-      <stop offset="0%"  stop-color="hsl(282, 90%, 65%)" stop-opacity="0.85"/>
-      <stop offset="100%" stop-color="hsl(282, 90%, 65%)" stop-opacity="0"/>
+    <!-- Navy palette — chosen so the purple→pink quill gradient pops cleanly.
+         Dark indigo base with a subtle bright-blue accent top-right. -->
+    <radialGradient id="bg-warm" cx="0.78" cy="0.18" r="0.6"
+                    gradientUnits="objectBoundingBox"
+                    gradientTransform="translate(0.78 0.18) scale(1 0.833) translate(-0.78 -0.18)">
+      <stop offset="0%"  stop-color="hsl(220, 70%, 55%)" stop-opacity="0.65"/>
+      <stop offset="60%" stop-color="hsl(220, 70%, 55%)" stop-opacity="0"/>
     </radialGradient>
-    <radialGradient id="bg-cool" cx="18%" cy="88%" r="70%">
-      <stop offset="0%"  stop-color="hsl(345, 80%, 55%)" stop-opacity="0.75"/>
-      <stop offset="100%" stop-color="hsl(345, 80%, 55%)" stop-opacity="0"/>
+    <radialGradient id="bg-cool" cx="0.18" cy="0.88" r="0.7"
+                    gradientUnits="objectBoundingBox"
+                    gradientTransform="translate(0.18 0.88) scale(1 0.857) translate(-0.18 -0.88)">
+      <stop offset="0%"  stop-color="hsl(260, 50%, 35%)" stop-opacity="0.55"/>
+      <stop offset="65%" stop-color="hsl(260, 50%, 35%)" stop-opacity="0"/>
     </radialGradient>
-    <radialGradient id="bg-center" cx="50%" cy="50%" r="55%">
-      <stop offset="0%"  stop-color="hsl(312, 70%, 45%)" stop-opacity="0.55"/>
-      <stop offset="100%" stop-color="hsl(312, 70%, 45%)" stop-opacity="0"/>
+    <radialGradient id="bg-center" cx="0.5" cy="0.5" r="0.55"
+                    gradientUnits="objectBoundingBox">
+      <stop offset="0%"  stop-color="hsl(240, 50%, 30%)" stop-opacity="0.4"/>
+      <stop offset="70%" stop-color="hsl(240, 50%, 30%)" stop-opacity="0"/>
     </radialGradient>
     <linearGradient id="bg-base" x1="0%" y1="0%" x2="58%" y2="100%">
-      <stop offset="0%"  stop-color="hsl(252, 45%, 18%)"/>
-      <stop offset="100%" stop-color="hsl(262, 55%, 9%)"/>
+      <stop offset="0%"  stop-color="hsl(232, 55%, 12%)"/>
+      <stop offset="100%" stop-color="hsl(240, 60%, 6%)"/>
     </linearGradient>
     <pattern id="dots" x="0" y="0" width="14" height="14" patternUnits="userSpaceOnUse">
       <circle cx="1" cy="1" r="1" fill="rgba(0,0,0,0.45)"/>
@@ -36,7 +43,7 @@
     <rect width="1024" height="1024" fill="url(#bg-warm)"/>
     <rect width="1024" height="1024" fill="url(#bg-cool)"/>
     <rect width="1024" height="1024" fill="url(#bg-center)"/>
-    <rect width="1024" height="1024" fill="url(#dots)" opacity="0.18"/>
+    <rect width="1024" height="1024" fill="url(#dots)" opacity="0.18" style="mix-blend-mode: multiply"/>
 
     <!-- Inner ring -->
     <rect x="48" y="48" width="928" height="928" rx="88" fill="none"
