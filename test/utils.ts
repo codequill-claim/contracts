@@ -4,7 +4,11 @@ export function asBigInt(v: any): bigint {
   return typeof v === "bigint" ? v : BigInt(v);
 }
 
-const WORKSPACE_NFT_BASE_URI = "https://api.codequill.xyz/v1/workspace-nft/";
+/// A dummy `ipfs://<cid>` URI used across the test suite — only the format
+/// matters here, not the resolvability. Real mints (web app side) pass an
+/// IPFS URI pointing at the workspace's frozen metadata JSON.
+export const TEST_TOKEN_URI =
+  "ipfs://bafkreigh2akiscaildcqabsyg3dfr6chu3fgpregiymsck7e7aqa4s52zy";
 
 export async function setupCodeQuill() {
   const connection = await hre.network.connect();
@@ -14,9 +18,10 @@ export async function setupCodeQuill() {
   const [deployer, alice, bob, charlie, daoExecutor] = await ethers.getSigners();
 
   // Workspace authority is now backed by an ERC-721 NFT. Deploy the NFT
-  // first, then pass it into the WorkspaceRegistry constructor.
+  // first, then pass it into the WorkspaceRegistry constructor. Per-token
+  // URIs are set at mint time, so the NFT itself takes no constructor args.
   const WorkspaceNFT = await ethers.getContractFactory("CodeQuillWorkspaceNFT");
-  const workspaceNft = await WorkspaceNFT.deploy(WORKSPACE_NFT_BASE_URI);
+  const workspaceNft = await WorkspaceNFT.deploy();
   await workspaceNft.waitForDeployment();
 
   const Workspace = await ethers.getContractFactory("CodeQuillWorkspaceRegistry");
@@ -153,9 +158,12 @@ export async function mintWorkspace(params: {
   relayerSigner: any;
   contextId: string;
   to: string;
+  tokenURI?: string;
 }) {
-  const { workspaceNft, relayerSigner, contextId, to } = params;
-  return workspaceNft.connect(relayerSigner).mint(contextId, to);
+  const { workspaceNft, relayerSigner, contextId, to, tokenURI } = params;
+  return workspaceNft
+    .connect(relayerSigner)
+    .mint(contextId, to, tokenURI ?? TEST_TOKEN_URI);
 }
 
 export async function setWorkspaceMemberWithSig(params: {

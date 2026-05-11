@@ -3,6 +3,7 @@ import {
   asBigInt,
   getWorkspaceEip712Domain,
   setupCodeQuill,
+  TEST_TOKEN_URI,
   setWorkspaceMemberWithSig,
   workspaceSetMemberTypes,
 } from "./utils";
@@ -44,12 +45,12 @@ describe("CodeQuillWorkspaceRegistry (V2 / NFT-backed)", function () {
     });
 
     it("returns the NFT holder once minted", async function () {
-      await workspaceNft.connect(deployer).mint(contextId, authority.address);
+      await workspaceNft.connect(deployer).mint(contextId, authority.address, TEST_TOKEN_URI);
       expect(await workspace.authorityOf(contextId)).to.equal(authority.address);
     });
 
     it("follows the NFT after a transfer", async function () {
-      await workspaceNft.connect(deployer).mint(contextId, authority.address);
+      await workspaceNft.connect(deployer).mint(contextId, authority.address, TEST_TOKEN_URI);
       const tokenId = await workspaceNft.tokenIdOf(contextId);
 
       await workspaceNft
@@ -66,7 +67,7 @@ describe("CodeQuillWorkspaceRegistry (V2 / NFT-backed)", function () {
 
   describe("isMember", function () {
     beforeEach(async function () {
-      await workspaceNft.connect(deployer).mint(contextId, authority.address);
+      await workspaceNft.connect(deployer).mint(contextId, authority.address, TEST_TOKEN_URI);
     });
 
     it("returns false for zero context or zero address", async function () {
@@ -118,7 +119,7 @@ describe("CodeQuillWorkspaceRegistry (V2 / NFT-backed)", function () {
 
   describe("setMemberWithSig", function () {
     beforeEach(async function () {
-      await workspaceNft.connect(deployer).mint(contextId, authority.address);
+      await workspaceNft.connect(deployer).mint(contextId, authority.address, TEST_TOKEN_URI);
     });
 
     it("adds and removes a member via authority signature", async function () {
@@ -328,7 +329,7 @@ describe("CodeQuillWorkspaceRegistry (V2 / NFT-backed)", function () {
 
   describe("leave", function () {
     beforeEach(async function () {
-      await workspaceNft.connect(deployer).mint(contextId, authority.address);
+      await workspaceNft.connect(deployer).mint(contextId, authority.address, TEST_TOKEN_URI);
     });
 
     it("allows a member to self-leave", async function () {

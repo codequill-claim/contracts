@@ -6,6 +6,7 @@ import {
   getWorkspaceEip712Domain,
   setWorkspaceMemberWithSig,
   setupCodeQuill,
+  TEST_TOKEN_URI,
 } from "./utils";
 
 describe("CodeQuillRepositoryRegistry", function () {
@@ -49,8 +50,8 @@ describe("CodeQuillRepositoryRegistry", function () {
 
     // Bootstrap contexts by minting the workspace NFT (the NFT holder is the
     // authority and is implicitly a member of the workspace).
-    await workspaceNft.connect(deployer).mint(contextId, deployer.address);
-    await workspaceNft.connect(deployer).mint(otherContextId, deployer.address);
+    await workspaceNft.connect(deployer).mint(contextId, deployer.address, TEST_TOKEN_URI);
+    await workspaceNft.connect(deployer).mint(otherContextId, deployer.address, TEST_TOKEN_URI);
 
     const now = asBigInt(await time.latest());
     const deadline = now + 3600n;

@@ -7,6 +7,7 @@ import {
   getWorkspaceEip712Domain,
   setWorkspaceMemberWithSig,
   setupCodeQuill,
+  TEST_TOKEN_URI,
 } from "./utils";
 
 describe("CodeQuillAttestationRegistry", function () {
@@ -53,7 +54,7 @@ describe("CodeQuillAttestationRegistry", function () {
     );
 
     workspaceDomain = await getWorkspaceEip712Domain(ethers, workspace);
-    await workspaceNft.connect(other).mint(contextId, other.address);
+    await workspaceNft.connect(other).mint(contextId, other.address, TEST_TOKEN_URI);
 
     const now = asBigInt(await time.latest());
     const membershipDeadline = now + 3600n;

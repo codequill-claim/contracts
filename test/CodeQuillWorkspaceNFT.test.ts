@@ -3,6 +3,7 @@ import {
   asBigInt,
   getWorkspaceEip712Domain,
   setupCodeQuill,
+  TEST_TOKEN_URI,
   workspaceSetMemberTypes,
 } from "./utils";
 
@@ -37,11 +38,20 @@ describe("CodeQuillWorkspaceNFT", function () {
       expect(await workspaceNft.symbol()).to.equal("CQWS");
     });
 
-    it("returns the configured base URI for tokenURI", async function () {
-      await workspaceNft.connect(deployer).mint(contextId, alice.address);
+    it("returns the per-token URI set at mint", async function () {
+      const uri = "ipfs://bafkreigh2akiscaildcqabsyg3dfr6chu3fgpregiymsck7e7aqa4s52zy";
+      await workspaceNft.connect(deployer).mint(contextId, alice.address, uri);
       const tokenId = await workspaceNft.tokenIdOf(contextId);
-      const expected = `https://api.codequill.xyz/v1/workspace-nft/${contextId}.json`;
-      expect(await workspaceNft.tokenURI(tokenId)).to.equal(expected);
+      expect(await workspaceNft.tokenURI(tokenId)).to.equal(uri);
+    });
+
+    it("returns independent URIs for independent workspaces", async function () {
+      const uriA = "ipfs://cidA";
+      const uriB = "ipfs://cidB";
+      await workspaceNft.connect(deployer).mint(contextId, alice.address, uriA);
+      await workspaceNft.connect(deployer).mint(otherContextId, bob.address, uriB);
+      expect(await workspaceNft.tokenURI(await workspaceNft.tokenIdOf(contextId))).to.equal(uriA);
+      expect(await workspaceNft.tokenURI(await workspaceNft.tokenIdOf(otherContextId))).to.equal(uriB);
     });
 
     it("reverts tokenURI for an unminted token", async function () {
@@ -55,7 +65,7 @@ describe("CodeQuillWorkspaceNFT", function () {
 
   describe("mint", function () {
     it("emits Transfer + WorkspaceMinted + WorkspaceAuthorityTransferred", async function () {
-      const tx = await workspaceNft.connect(deployer).mint(contextId, alice.address);
+      const tx = await workspaceNft.connect(deployer).mint(contextId, alice.address, TEST_TOKEN_URI);
       const tokenId = await workspaceNft.tokenIdOf(contextId);
 
       await expect(tx)
@@ -63,7 +73,7 @@ describe("CodeQuillWorkspaceNFT", function () {
         .withArgs(ethers.ZeroAddress, alice.address, tokenId);
       await expect(tx)
         .to.emit(workspaceNft, "WorkspaceMinted")
-        .withArgs(contextId, alice.address);
+        .withArgs(contextId, alice.address, TEST_TOKEN_URI);
       await expect(tx)
         .to.emit(workspaceNft, "WorkspaceAuthorityTransferred")
         .withArgs(contextId, ethers.ZeroAddress, alice.address);
@@ -74,27 +84,31 @@ describe("CodeQuillWorkspaceNFT", function () {
 
     it("can be called by anyone (permissionless first-mint-wins)", async function () {
       await expect(
-        workspaceNft.connect(charlie).mint(contextId, alice.address),
+        workspaceNft.connect(charlie).mint(contextId, alice.address, TEST_TOKEN_URI),
       ).to.emit(workspaceNft, "WorkspaceMinted");
 
       await expect(
-        workspaceNft.connect(charlie).mint(contextId, bob.address),
+        workspaceNft.connect(charlie).mint(contextId, bob.address, TEST_TOKEN_URI),
       ).to.be.revertedWithCustomError(workspaceNft, "WorkspaceAlreadyMinted");
     });
 
-    it("reverts on zero contextId / zero recipient", async function () {
+    it("reverts on zero contextId / zero recipient / empty tokenURI", async function () {
       await expect(
-        workspaceNft.connect(deployer).mint(ethers.ZeroHash, alice.address),
+        workspaceNft.connect(deployer).mint(ethers.ZeroHash, alice.address, TEST_TOKEN_URI),
       ).to.be.revertedWithCustomError(workspaceNft, "InvalidContextId");
 
       await expect(
-        workspaceNft.connect(deployer).mint(contextId, ethers.ZeroAddress),
+        workspaceNft.connect(deployer).mint(contextId, ethers.ZeroAddress, TEST_TOKEN_URI),
       ).to.be.revertedWithCustomError(workspaceNft, "InvalidRecipient");
+
+      await expect(
+        workspaceNft.connect(deployer).mint(contextId, alice.address, ""),
+      ).to.be.revertedWithCustomError(workspaceNft, "InvalidTokenURI");
     });
 
     it("supports independent contexts side by side", async function () {
-      await workspaceNft.connect(deployer).mint(contextId, alice.address);
-      await workspaceNft.connect(deployer).mint(otherContextId, bob.address);
+      await workspaceNft.connect(deployer).mint(contextId, alice.address, TEST_TOKEN_URI);
+      await workspaceNft.connect(deployer).mint(otherContextId, bob.address, TEST_TOKEN_URI);
 
       const tokenA = await workspaceNft.tokenIdOf(contextId);
       const tokenB = await workspaceNft.tokenIdOf(otherContextId);
@@ -106,7 +120,7 @@ describe("CodeQuillWorkspaceNFT", function () {
 
   describe("approvals are disabled", function () {
     beforeEach(async function () {
-      await workspaceNft.connect(deployer).mint(contextId, alice.address);
+      await workspaceNft.connect(deployer).mint(contextId, alice.address, TEST_TOKEN_URI);
     });
 
     it("reverts approve()", async function () {
@@ -145,7 +159,7 @@ describe("CodeQuillWorkspaceNFT", function () {
 
   describe("transfer = authority change", function () {
     beforeEach(async function () {
-      await workspaceNft.connect(deployer).mint(contextId, alice.address);
+      await workspaceNft.connect(deployer).mint(contextId, alice.address, TEST_TOKEN_URI);
     });
 
     it("transfers authority via safeTransferFrom and updates the registry view", async function () {
@@ -240,7 +254,7 @@ describe("CodeQuillWorkspaceNFT", function () {
       await wallet.waitForDeployment();
       const walletAddr = await wallet.getAddress();
 
-      await workspaceNft.connect(deployer).mint(contextId, walletAddr);
+      await workspaceNft.connect(deployer).mint(contextId, walletAddr, TEST_TOKEN_URI);
       expect(await workspace.authorityOf(contextId)).to.equal(walletAddr);
 
       const domain = await getWorkspaceEip712Domain(ethers, workspace);
@@ -282,7 +296,7 @@ describe("CodeQuillWorkspaceNFT", function () {
       await wallet.waitForDeployment();
       const walletAddr = await wallet.getAddress();
 
-      await workspaceNft.connect(deployer).mint(contextId, walletAddr);
+      await workspaceNft.connect(deployer).mint(contextId, walletAddr, TEST_TOKEN_URI);
 
       const domain = await getWorkspaceEip712Domain(ethers, workspace);
       const now = asBigInt(await time.latest());
