@@ -47,7 +47,9 @@ export default defineConfig({
       chainType: "l1",
       chainId: 8453,
       url: configVariable("BASE_RPC"),
-      accounts: [configVariable("DEPLOYER_PK")],
+      // Mainnet deploys use a dedicated key kept separately from the
+      // testnet `DEPLOYER_PK`. Set with `npx hardhat keystore set BASE_DEPLOYER_PK`.
+      accounts: [configVariable("BASE_DEPLOYER_PK")],
     },
   },
 });
