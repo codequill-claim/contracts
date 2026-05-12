@@ -120,6 +120,7 @@ contract CodeQuillDelegation is EIP712 {
     ) external {
         require(block.timestamp <= deadline, "sig expired");
         require(expiry > block.timestamp, "bad expiry");
+        require(expiry <= type(uint64).max, "expiry overflow");
         require(owner_ != address(0), "zero owner");
         require(relayer_ != address(0), "zero relayer");
         require(contextId != bytes32(0), "zero context");
