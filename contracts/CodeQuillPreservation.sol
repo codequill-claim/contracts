@@ -48,7 +48,9 @@ contract CodeQuillPreservationRegistry {
         address author;             // repo owner (recorded for provenance)
     }
 
-    // repoId => snapshotRoot => single preservation (overwrite allowed)
+    /// @dev repoId => snapshotRoot => single preservation. Once anchored,
+    ///      a `(repoId, snapshotRoot)` slot is immutable — the record is
+    ///      evidence and cannot be re-anchored or overwritten.
     mapping(bytes32 => mapping(bytes32 => Preservation)) private preservationsOf;
 
     event PreservationAnchored(
@@ -122,6 +124,13 @@ contract CodeQuillPreservationRegistry {
         // Require the snapshot exists on-chain
         uint256 snapIdx1 = snapshot.snapshotIndexByRoot(repoId, snapshotMerkleRoot);
         require(snapIdx1 != 0, "snapshot not found");
+
+        // Preservation is evidence — once anchored for (repoId, snapshotRoot),
+        // the record is immutable. No overwrites, no re-anchors.
+        require(
+            preservationsOf[repoId][snapshotMerkleRoot].timestamp == 0,
+            "already anchored"
+        );
 
         preservationsOf[repoId][snapshotMerkleRoot] = Preservation({
             snapshotMerkleRoot: snapshotMerkleRoot,
