@@ -36,6 +36,36 @@ interface ICodeQuillSnapshotRegistry {
  * - Repo referenced must belong to the same contextId.
  * - Multi-owner releases are allowed, but only if the author is a workspace member.
  *   (Repo ownership is NOT required to build a release, by design.)
+ *
+ * ─── WORKSPACE TRUST MODEL (READ CAREFULLY BEFORE ADDING MEMBERS) ──────────
+ *
+ * Revocation and supersession of releases are **workspace-scoped**, NOT
+ * author-scoped. Any *current member* of a release's workspace contextId
+ * (directly, or via SCOPE_RELEASE delegation) can:
+ *
+ *   - revoke any release in that workspace (`revokeRelease`)
+ *   - supersede any revoked release with a new one (`supersedeRelease`)
+ *
+ * The recorded `author` and `governanceAuthority` fields are immutable
+ * provenance and are never used for revoke/supersede authorization.
+ *
+ * Implication for workspace operators:
+ *   adding a member to a workspace grants them unilateral revoke/supersede
+ *   power over EVERY release the workspace has ever anchored — including
+ *   releases authored by other members or by you.
+ *
+ * Mitigation if you need stricter separation of duties:
+ *   - keep workspace membership tight and rotate when members leave
+ *   - hold the workspace NFT in a Safe with strong custody (transfer of the
+ *     NFT is the ultimate authority handle)
+ *   - for high-stakes releases, prefer the DAO executor path (set via
+ *     `setDaoExecutor`) which is the only privileged role that bypasses
+ *     per-release governanceAuthority
+ *
+ * `accept` and `reject` are NOT workspace-scoped — they require the release's
+ * own `governanceAuthority` (or its SCOPE_RELEASE delegate) or the configured
+ * `daoExecutor` for the contextId.
+ * ──────────────────────────────────────────────────────────────────────────
  */
 contract CodeQuillReleaseRegistry {
     ICodeQuillRepositoryRegistry public immutable registry;
