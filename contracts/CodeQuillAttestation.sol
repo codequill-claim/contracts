@@ -90,22 +90,6 @@ contract CodeQuillAttestationRegistry {
         releaseRegistry = ICodeQuillReleaseRegistry(releaseRegistryAddr);
     }
 
-    /// @dev author must be self OR delegated, and must be a member of the release contextId.
-    modifier onlySelfOrDelegatedMember(address author, bytes32 contextId) {
-        require(contextId != bytes32(0), "zero context");
-        require(author != address(0), "zero author");
-        require(workspace.isMember(contextId, author), "author not member");
-
-        if (msg.sender == author) {
-            _;
-            return;
-        }
-
-        bool ok = delegation.isAuthorized(author, msg.sender, delegation.SCOPE_ATTEST(), contextId);
-        require(ok, "not authorized");
-        _;
-    }
-
     /// @notice Create a new attestation for a release.
     function createAttestation(
         bytes32 releaseId,
