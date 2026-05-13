@@ -13,6 +13,7 @@
   "devDependencies": {
     "@nomicfoundation/hardhat-ignition": "^3.0.3",
     "@nomicfoundation/hardhat-toolbox-mocha-ethers": "^3.0.0",
+    "@nomicfoundation/hardhat-verify": "^3.0.17",
     "@types/node": "^22.18.11",
     "ethers": "^6.15.0",
     "hardhat": "^3.0.7",
